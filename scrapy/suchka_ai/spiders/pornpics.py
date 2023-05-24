@@ -1,11 +1,8 @@
 import scrapy
-
-# https://www.pornpics.com/channels/list/0-9/
-# https://www.pornpics.com/channels/list/a/
-
+import re
+import os
 from ..items import ImageCaptionPairItem
 from scrapy.loader import ItemLoader
-import re
 
 class PornpicsSpider(scrapy.Spider):
     name = "pornpics"
@@ -33,22 +30,31 @@ class PornpicsSpider(scrapy.Spider):
                 data_url = search_url.format(keyword=keyword, limit=search_page_limit, offset=offset)
                 yield scrapy.Request(data_url, callback=self.parse_data_list)
 
-        for link in response.css("#content .alphabet .alpha a::attr(href)").getall():
-            yield scrapy.Request(link, callback=self.parse_channel_list)
+        for link in response.css("#content .alphabet .alpha a::attr(href)").getall()[1:]:
+            yield response.follow(link, callback=self.parse_channel_list)
 
     def parse_data_list(self, response):
         for data in response.json():
             data_url = data['g_url']
+            if self.is_duplicated(data['gid']): continue
             yield scrapy.Request(data_url, callback=self.parse_data)
-        pass
 
     def parse_data(self, response):
         # parse_meta_data
         tags = ", ".join(response.css(".gallery-info .tags a span::text").getall())
         description = response.css(".title-section.gallery h1::text").get()
-        for image_url in response.css(".gallery-ps4 .thumbwook a::attr(href)").getall():
-            pair = ImageCaptionPairItem()
-            pair['tags'] = tags
-            pair['image_url'] = image_url
-            pair['description'] = description
-            yield pair
+        copyright = response.css(".gallery-info__item a::text").get()
+        image_urls = response.css(".gallery-ps4 .thumbwook a::attr(href)").getall()
+        pair = ImageCaptionPairItem()
+        pair['id'] = re.search(r"var ID\s+=\s+'([0-9]+)'",response.text).group(1)
+        if self.is_duplicated(pair['id']): return
+        pair['source'] = self.name
+        pair['copyright'] = copyright
+        pair['tags'] = tags
+        pair['image_urls'] = image_urls
+        pair['description'] = description
+        yield pair
+
+    def is_duplicated(self, id):
+        data_path = os.path.join(self.settings.get('IMAGES_STORE'), self.name, id)
+        return os.path.exists(data_path)

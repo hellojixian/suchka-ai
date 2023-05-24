@@ -11,4 +11,8 @@ class ImageCaptionPairItem(scrapy.Item):
     description = scrapy.Field()
     image_url = scrapy.Field()
     tags = scrapy.Field()
+    source = scrapy.Field()
+    copyright = scrapy.Field()
+    id = scrapy.Field()
+    image_urls = scrapy.Field()
 

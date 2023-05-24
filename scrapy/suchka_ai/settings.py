@@ -1,5 +1,4 @@
 import os
-import sys
 # Scrapy settings for suchka_ai project
 #
 # For simplicity, this file contains only settings considered important or
@@ -15,7 +14,7 @@ SPIDER_MODULES = ["suchka_ai.spiders"]
 NEWSPIDER_MODULE = "suchka_ai.spiders"
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
-USER_AGENT = "suchka_ai bot (+http://www.suchka.ai)"
+USER_AGENT = "SuchkaAI bot (+http://www.suchka.ai)"
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = True
@@ -95,5 +94,7 @@ REQUEST_FINGERPRINTER_IMPLEMENTATION = "2.7"
 TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 FEED_EXPORT_ENCODING = "utf-8"
 
-ITEM_PIPELINES = {"scrapy.pipelines.images.ImagesPipeline": 1}
+ITEM_PIPELINES = {
+  "suchka_ai.pipelines.SuchkaAiPipeline": 1
+}
 IMAGES_STORE = f'{os.path.dirname(os.getcwd())}/output/'
