@@ -1,0 +1,1 @@
+HTTPS_PROXY=http://proxy-server:3128 scrapy crawl pornpics -O ../output/pornpics/output.json  --logfile ../output/pornpics/log
