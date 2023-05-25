@@ -62,10 +62,13 @@ class SuchkaAiPipeline(ImagesPipeline):
       exif_dict["0th"][piexif.ImageIFD.ImageDescription] = item['description'].encode(encoding='utf-8')
       exif_dict["0th"][piexif.ImageIFD.Artist] = item['models'].encode(encoding='utf-8')
       exif_dict["0th"][piexif.ImageIFD.Copyright] = item['copyright'].encode(encoding='utf-8')
-      exif_dict['thumbnail'] = None if exif_dict['thumbnail'] == b'' else exif_dict['thumbnail']
+
+      if 'thumbnail' in exif_dict:
+        exif_dict['thumbnail'] = None if exif_dict['thumbnail'] == b'' else exif_dict['thumbnail']
+
       exif_bytes = piexif.dump(exif_dict)
-    finally:
       image.save(full_path, exif=exif_bytes)
+    finally:
       image.close()
       del image
 
