@@ -20,43 +20,54 @@ db = Database()
 
 input_folder = sys.argv[1]
 
-
-processed_galleries = [g[0].path for g in model.Model.objects.values_list("galleries")]
+processed_galleries = set()
+existing_models = set()
+for m in tqdm.tqdm(model.Model.objects().all(), desc="Loading existing models"):
+  for g in m.galleries:processed_galleries.add(g.path)
+  existing_models.add(m)
 
 # load all models from the database
 new_models = 0
 new_gallery = 0
+skiped_galleries_no_json = 0
+skiped_galleries_no_model_name = 0
 
 # list of all subfolders in the input folder
-galleries = [f.path for f in os.scandir(input_folder) if f.is_dir() ]
+galleries = set()
+for f in os.scandir(input_folder): galleries.add(f.path)
 for gallery in tqdm.tqdm(galleries, desc="Scanning galleries"):
   if gallery in processed_galleries: continue
   # read and parse the data.json file from the gallery folder
   data_file = f"{gallery}/data.json"
-  if not os.path.exists(data_file): continue
+  if not os.path.exists(data_file): skiped_galleries_no_json+=1; continue
 
   data = json.load(open(data_file))
+  if data['models'] == "": skiped_galleries_no_model_name+=1; continue
   gallery_models = data['models'].split(', ')
   gallery = model.Gallery(
     path = gallery,
     is_solo = len(gallery_models) == 1,
   )
   for model_name in gallery_models:
-    existing_models = model.Model.objects(name=model_name)
-    if existing_models.count() == 0:
+    if model_name == "": continue
+    # check if the model_name already exists in existing_models
+    if model_name not in existing_models:
       # create a new model
       new_model = model.Model(
         name = model_name,
         galleries = [gallery],
       )
       new_model.save()
+      existing_models.add(new_model)
       new_models += 1
     else:
       # update galleries list
-      existing_model = existing_models.first()
-      existing_model.galleries.append(gallery)
-      existing_model.save()
+      existing_models[model_name]
+      existing_models[model_name].galleries.append(gallery)
+      existing_models[model_name].save()
   new_gallery += 1
 
 print(f"Found {new_models} models")
 print(f"Found {new_gallery} galleries")
+print(f"Skipped {skiped_galleries_no_json} galleries - no data.json file")
+print(f"Skipped {skiped_galleries_no_model_name} galleries - no model's namefile")
