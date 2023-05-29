@@ -77,6 +77,7 @@ for model_name in tqdm.tqdm(new_models.keys(), desc="Saving models"):
     else:
       existing_model = [m for m in existing_models if m.name == model_name][0]
 
+    need_save = False
     existing_gallery_paths = [g.path for g in existing_model.galleries]
     for gallery_id in new_models[model_name]['galleries'].keys():
       if new_models[model_name]['galleries'][gallery_id]['path'] not in existing_gallery_paths:
@@ -85,5 +86,6 @@ for model_name in tqdm.tqdm(new_models.keys(), desc="Saving models"):
           is_solo = new_models[model_name]['galleries'][gallery_id]['is_solo'],
         )
         existing_model.galleries.append(new_gallery)
-        existing_model.save(validate=True)
+        need_save = True
+    if need_save: existing_model.save(validate=True)
 print(f"Saved {len(saved_models)} new models")
