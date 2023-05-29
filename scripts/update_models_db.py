@@ -70,4 +70,4 @@ for gallery in tqdm.tqdm(galleries, desc="Scanning galleries"):
 print(f"Found {new_models} models")
 print(f"Found {new_gallery} galleries")
 print(f"Skipped {skiped_galleries_no_json} galleries - no data.json file")
-print(f"Skipped {skiped_galleries_no_model_name} galleries - no model's namefile")
+print(f"Skipped {skiped_galleries_no_model_name} galleries - no model's name")
