@@ -37,4 +37,12 @@ scrapy crawler ./crawler/pornpics.py
 ## 判断演员
 判断视频所有关键帧，从中提取出人脸做特征提取。
 然后把所有的人脸放在一个集合内做聚类，由这个逻辑判断主演的面部特征码
+DeepFace 是一个比较好的统一类库
 
+
+## 多标签分类任务
+### 特征提取
+特征提取用ResNet101
+
+### 分类头
+参考文章 https://zhuanlan.zhihu.com/p/107737824

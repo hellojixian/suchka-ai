@@ -54,6 +54,7 @@ DOWNLOADER_MIDDLEWARES = {
   "scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware": 110,
   #  "suchka_ai.middlewares.SuchkaAiDownloaderMiddleware": 543,
 }
+HTTPPROXY_ENABLED = True
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
