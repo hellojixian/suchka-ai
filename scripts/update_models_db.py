@@ -28,9 +28,7 @@ subfolders = [f.path for f in os.scandir(input_folder) if f.is_dir() ]
 for gallery in tqdm.tqdm(subfolders, desc="Scanning galleries"):
   # read and parse the data.json file from the gallery folder
   data_file = f"{gallery}/data.json"
-  if not os.path.exists(data_file):
-    print(f"{data_file} is not existing!!!")
-    continue
+  if not os.path.exists(data_file): continue
   data = json.load(open(data_file))
   gallery_models = data['models'].split(', ')
   for model_name in gallery_models:
@@ -50,6 +48,7 @@ print(f"Found {len(new_models)} models")
 
 # fetch all models from the database
 existing_models = model.Model.objects()
+
 saved_models = []
 for model_name in tqdm.tqdm(new_models.keys(), desc="Saving models"):
   # check if model exists in existing_models list, if not create a new model
@@ -75,23 +74,16 @@ for model_name in tqdm.tqdm(new_models.keys(), desc="Saving models"):
     # check saved_models first and then existing_models
     if len([m for m in saved_models if m.name == model_name]) > 0:
       existing_model = [m for m in saved_models if m.name == model_name][0]
-      # print('from saved models')
     else:
       existing_model = [m for m in existing_models if m.name == model_name][0]
-      # print('from DB')
 
-    need_save = False
+    existing_gallery_paths = [g.path for g in existing_model.galleries]
     for gallery_id in new_models[model_name]['galleries'].keys():
-      existing_gallery_paths = [g.path for g in existing_model.galleries]
-
       if new_models[model_name]['galleries'][gallery_id]['path'] not in existing_gallery_paths:
-        # print(model_name, existing_gallery_paths, ":")
-        # print('adding gallery', new_models[model_name]['galleries'][gallery_id]['path'], 'to', existing_gallery_paths)
         new_gallery = model.Gallery(
           path = new_models[model_name]['galleries'][gallery_id]['path'],
           is_solo = new_models[model_name]['galleries'][gallery_id]['is_solo'],
         )
         existing_model.galleries.append(new_gallery)
-        need_save = True
-    if need_save: existing_model.save(validate=True)
+        existing_model.save(validate=True)
 print(f"Saved {len(saved_models)} new models")
