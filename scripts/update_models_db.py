@@ -21,10 +21,10 @@ db = Database()
 input_folder = sys.argv[1]
 
 processed_galleries = set()
-existing_models = set()
+existing_models = dict()
 for m in tqdm.tqdm(model.Model.objects().all(), desc="Loading existing models"):
   for g in m.galleries:processed_galleries.add(g.path)
-  existing_models.add(m)
+  existing_models[m.name] = m
 
 # load all models from the database
 new_models = 0
@@ -58,7 +58,7 @@ for gallery in tqdm.tqdm(galleries, desc="Scanning galleries"):
         galleries = [gallery],
       )
       new_model.save()
-      existing_models.add(new_model)
+      existing_models[model_name] = new_model
       new_models += 1
     else:
       # update galleries list
