@@ -12,9 +12,6 @@ class PornpicsSpider(scrapy.Spider):
     def parse(self, response):
         if response.url in self.start_urls:
             yield from self.parse_channel_list(response)
-        # response.l
-        pair = ItemLoader(item=ImageCaptionPairItem(), response=response)
-        pair.load_item()
 
     def parse_channel_list(self, response):
         search_url = "https://www.pornpics.com/search/srch.php?q={keyword}&lang=en&limit={limit}&offset={offset}"

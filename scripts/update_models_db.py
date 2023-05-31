@@ -1,11 +1,4 @@
 #!/usr/bin/env python3
-
-# scan the specified folder for images and create a database of faces
-# create a status file to track the progress of the scan
-
-# build unique model name list
-# each model create a new entity in the database
-
 import os
 import sys
 import json
