@@ -3,7 +3,6 @@ from mongoengine import *
 class Face(EmbeddedDocument):
   path = StringField(required=True)
   source = StringField(required=True)
-  embedding = ListField(required=True)
 
 class Gallery(EmbeddedDocument):
   path = StringField(required=True)

@@ -34,7 +34,11 @@ for gallery in tqdm.tqdm(galleries, desc="Scanning galleries"):
   data_file = f"{gallery}/data.json"
   if not os.path.exists(data_file): skiped_galleries_no_json+=1; continue
 
-  data = json.load(open(data_file))
+  try:
+    data = json.load(open(data_file))
+  except:
+    print(f"Failed to parse {data_file}")
+    continue
   if data['models'] == "": skiped_galleries_no_model_name+=1; continue
   gallery_models = data['models'].split(', ')
   gallery = model.Gallery(
