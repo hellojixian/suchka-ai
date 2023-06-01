@@ -25,6 +25,9 @@ new_gallery = 0
 skiped_galleries_no_json = 0
 skiped_galleries_no_model_name = 0
 
+def normalize_name(name):
+  return " ".join([n.capitalize() for n in name.strip().split(' ')])
+
 # list of all subfolders in the input folder
 galleries = set()
 for f in os.scandir(input_folder): galleries.add(f.path)
@@ -51,7 +54,7 @@ for gallery in tqdm.tqdm(galleries, desc="Scanning galleries"):
     if model_name not in existing_models:
       # create a new model
       new_model = model.Model(
-        name = model_name,
+        name = normalize_name(model_name),
         galleries = [gallery],
       )
       new_model.save()
