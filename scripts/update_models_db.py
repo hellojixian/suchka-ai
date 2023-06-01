@@ -49,12 +49,13 @@ for gallery in tqdm.tqdm(galleries, desc="Scanning galleries"):
     is_solo = len(gallery_models) == 1,
   )
   for model_name in gallery_models:
+    model_name = normalize_name(model_name)
     if model_name == "": continue
     # check if the model_name already exists in existing_models
     if model_name not in existing_models:
       # create a new model
       new_model = model.Model(
-        name = normalize_name(model_name),
+        name = model_name,
         galleries = [gallery],
       )
       new_model.save()
