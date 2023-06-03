@@ -53,3 +53,8 @@ DeepFace 是一个比较好的统一类库
 
 ### 分类头
 参考文章 https://zhuanlan.zhihu.com/p/107737824
+
+### tensorflow GPU
+```sh
+source $CONDA_PREFIX/etc/conda/activate.d/env_vars.sh
+```

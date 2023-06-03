@@ -47,6 +47,7 @@ for model_name in tqdm.tqdm(model_faces.keys(), desc="Extracting models face"):
   embedding_file = f'{output_dir}/{model_name}/embeddings.pickle'
   model_data = model.Model.objects(name = model_name).first()
   model_embeddings = []
+
   if not os.path.exists(embedding_file):
     # initalize the embedding files for the model
     init_model_face_db(model_name, model_faces[model_name], output_dir)

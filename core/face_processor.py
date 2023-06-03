@@ -154,10 +154,9 @@ def init_model_face_db(model_name, galleries, output_dir):
     if gallery_root == "": gallery_root = gallery.path.replace(f'/{gid}', '')
     if not os.path.exists(f'{temp_folder}/{gid}'): os.mkdir(f'{temp_folder}/{gid}')
     # extract all faces from one gallery
-    images = [f.path for f in os.scandir(f"{gallery.path}") if f.name.lower().endswith(".jpg")]
+    images = [f.path for f in os.scandir(gallery.path) if f.name.lower().endswith(".jpg")]
     for image_path in tqdm.tqdm(images, desc=f'Extracting init faces from {gallery.path}'):
       output_file = f'{temp_folder}/{gid}/{os.path.basename(image_path).replace(".jpg", "")}_0.jpg'
-
       faces = DeepFace.extract_faces(img_path = image_path,
                                      enforce_detection = False,
                                      grayscale = False,
@@ -182,7 +181,7 @@ def init_model_face_db(model_name, galleries, output_dir):
         face_id += 1
 
     # save cached embeddings file
-    embedding_cache_file = f'{temp_folder}/{gid}/embeddings.pkl'
+    embedding_cache_file = f'{temp_folder}/{gid}/embeddings.pickle'
     with open(embedding_cache_file, 'wb') as f:
       f.write(pickle.dumps(gallery_faces))
 
@@ -192,5 +191,7 @@ def init_model_face_db(model_name, galleries, output_dir):
     # find the common embedding so far
     common_face = detected_common_face(grouped_faces_by_gallery, common_face_threshold)
     if len(common_face) > 0:
-      save_common_face(common_face, output_dir, gallery_root)
+      save_common_face(common_face, model_face_folder, gallery_root)
+      # delete temp folder
+      shutil.rmtree(temp_folder)
       break
