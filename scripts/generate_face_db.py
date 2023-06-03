@@ -160,6 +160,10 @@ def process_image(image_path,model_name):
 
   yield need_save
 
+def split_list(lst, chunk_size):
+  return [lst[i:i+chunk_size] for i in range(0, len(lst), chunk_size)]
+
+
 for model_name in tqdm.tqdm(model_faces.keys(), desc="Extracting models face"):
   if not " " in model_name: continue
   embedding_file = f'{output_dir}/{model_name}/embeddings.pickle'
@@ -168,6 +172,8 @@ for model_name in tqdm.tqdm(model_faces.keys(), desc="Extracting models face"):
     # initalize the embedding files for the model
     init_model_face_db(model_name, model_faces[model_name], output_dir)
 
-  for res in  process_galleries(model_faces[model_name],model_name):
-    res = None
-    gc.collect()
+  chunked_list = split_list(model_faces[model_name], 5)
+  for chunk in chunked_list:
+    for res in  process_galleries(chunk, model_name):
+      res = None
+      gc.collect()
