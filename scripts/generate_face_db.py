@@ -39,7 +39,9 @@ DEEPFACE_MODEL = os.getenv("DEEPFACE_MODEL")
 if not os.path.exists(output_dir): os.makedirs(output_dir)
 
 for m in tqdm.tqdm(model.Model.objects().all(), desc="Loading existing models"):
-  model_faces[m.name] = m.galleries
+  # sort the galleries by is_solo
+  sorted_galleries = sorted(m.galleries, key=lambda x: x["is_solo"], reverse=True)
+  model_faces[m.name] = sorted_galleries
 
 total_faces = 0
 for model_name in tqdm.tqdm(model_faces.keys(), desc="Extracting models face"):

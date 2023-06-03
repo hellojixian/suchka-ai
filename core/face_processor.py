@@ -21,8 +21,20 @@ DEEPFACE_MODEL = os.getenv("DEEPFACE_MODEL")
 
 group_face_threshold = 0.65
 common_face_threshold = 0.65
+check_similarity_threshold = 0.9
 confidence_threshold = 0.95
 min_face_size = 50
+
+def convert_dict_to_matrix(dictionary):
+    keys = list(dictionary.keys())
+    num_rows = len(dictionary)
+    num_cols = max(len(values) for values in dictionary.values())
+    matrix = np.zeros((num_rows, num_cols))
+    for i, key in enumerate(keys):
+        values = dictionary[key]
+        if type(values) == tuple: values = list(values)[0]
+        matrix[i, :len(values)] = values
+    return matrix
 
 def crop_image(image_path, region, target_size = (224, 224)):
   image = cv2.imread(image_path)
@@ -72,8 +84,9 @@ def silence_tensorflow():
     pass
 
 def check_similarity(embedding, existing_embeddings):
-  similarity = np.mean(cosine_similarity([embedding], existing_embeddings))
-  return similarity >= common_face_threshold
+  embedding_matrix = convert_dict_to_matrix(existing_embeddings)
+  similarity = np.max(cosine_similarity([embedding], embedding_matrix))
+  return similarity >= check_similarity_threshold
 
 def save_common_face(data, output_path, src_gallery_path):
   embeddings = dict()
