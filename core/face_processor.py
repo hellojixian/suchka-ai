@@ -143,7 +143,9 @@ def init_model_face_db(model_name, galleries, output_dir):
   """Initialize the face recognition model."""
   # create a temp folder to store the temp faces
   gallery_root = ""
-  temp_folder = f'{output_dir}/{model_name}/temp'
+  model_face_folder = f'{output_dir}/{model_name}'
+  temp_folder = f'{model_face_folder}/temp'
+  if not os.path.exists(model_face_folder): os.mkdir(model_face_folder)
   if not os.path.exists(temp_folder): os.mkdir(temp_folder)
   grouped_faces_by_gallery = {}
   for gallery in galleries:
