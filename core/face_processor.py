@@ -7,8 +7,8 @@ import numpy as np
 import pickle
 import shutil
 
-project_root = os.path.abspath(os.path.join(os.path.dirname('../')))
-sys.path.append(project_root)
+# project_root = os.path.abspath(os.path.join(os.path.dirname('../')))
+# sys.path.append(project_root)
 
 from sklearn.metrics.pairwise import cosine_similarity
 
