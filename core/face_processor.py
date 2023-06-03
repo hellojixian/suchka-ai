@@ -154,7 +154,7 @@ def init_model_face_db(model_name, galleries, output_dir):
     if gallery_root == "": gallery_root = gallery.path.replace(f'/{gid}', '')
     if not os.path.exists(f'{temp_folder}/{gid}'): os.mkdir(f'{temp_folder}/{gid}')
     # extract all faces from one gallery
-    images = [f.path for f in os.scandir(f"{project_root}/{gallery.path}") if f.name.lower().endswith(".jpg")]
+    images = [f.path for f in os.scandir(f"{gallery.path}") if f.name.lower().endswith(".jpg")]
     for image_path in tqdm.tqdm(images, desc=f'Extracting init faces from {gallery.path}'):
       output_file = f'{temp_folder}/{gid}/{os.path.basename(image_path).replace(".jpg", "")}_0.jpg'
 
