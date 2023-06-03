@@ -70,7 +70,8 @@ def process_galleries(galleries,model_name):
 
 def process_image(image_path,model_name):
   model_embeddings = []
-  with open(embedding_file, 'rb') as file:
+  model_embedding_file = f'{output_dir}/{model_name}/embeddings.pickle'
+  with open(model_embedding_file, 'rb') as file:
     model_embeddings = pickle.load(file)
 
   embedding_file = f'{output_dir}/{model_name}/embeddings.pickle'
