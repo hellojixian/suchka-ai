@@ -71,7 +71,7 @@ def process_image(image_path,model_name, model_embeddings, processed_log_set):
   output_file = f"{model_face_folder}/{os.path.basename(image_path)}"
   output_file_key = f"{model_name}/{os.path.basename(image_path)}"
   processed_log = f"{model_face_folder}/processed.log"
-
+  model_data = model.Model.objects(name = model_name).first()
   # if the face is already extracted, skip it
   if image_path in processed_log_set:
     # print('skipping - already processed', image_path)
@@ -108,6 +108,23 @@ def process_image(image_path,model_name, model_embeddings, processed_log_set):
 
     # save the face in the output folder
     cv2.imwrite(output_file, cropped_face)
+
+    if model_data.gender:
+    # filter out faces which the gender is not matched
+      face_analysis = DeepFace.analyze(img_path = output_file,
+                                       actions=['gender'],
+                                       enforce_detection=False,
+                                       silent=True,
+                                       align=True,
+                                       detector_backend = DEEPFACE_BACKEND)
+
+      if len(face_analysis) == 0:return
+      face_gender = face_analysis[0]['dominant_gender'].lower()
+      if model_data.gender.lower() == 'male':
+        if face_gender != 'man': continue
+      elif model_data.gender.lower() == 'female' or model_data.gender.lower() == 'shemale':
+        if face_gender != 'woman': continue
+
     # save the face embedding in the database
     face_embeddings = DeepFace.represent(img_path = output_file,
                             enforce_detection=False,
@@ -117,7 +134,7 @@ def process_image(image_path,model_name, model_embeddings, processed_log_set):
     if len(face_embeddings) == 0:return
     if not check_similarity(face_embeddings[0]['embedding'], model_embeddings): return
     # check if face is similar to other faces in the model
-    model_data = model.Model.objects(name = model_name).first()
+
     model_data.faces.append(model.Face(path=output_file_key, source=image_path))
     model_embeddings[image_path] = face_embeddings[0]['embedding'],
     need_save = True

@@ -11,6 +11,7 @@ import shutil
 # sys.path.append(project_root)
 
 from sklearn.metrics.pairwise import cosine_similarity
+import core.data_schema.model as model
 
 from deepface import DeepFace
 from dotenv import load_dotenv
@@ -164,6 +165,8 @@ def init_model_face_db(model_name, galleries, output_dir):
   temp_folder = f'{model_face_folder}/temp'
   if not os.path.exists(model_face_folder): os.mkdir(model_face_folder)
   if not os.path.exists(temp_folder): os.mkdir(temp_folder)
+
+  model_data = model.Model.objects(name=model_name).first()
   detected = False
   grouped_faces_by_gallery = {}
   for gallery in galleries:
@@ -187,6 +190,23 @@ def init_model_face_db(model_name, galleries, output_dir):
         if face['facial_area']['w'] < min_face_size or face['facial_area']['h'] < min_face_size: continue
         cropped_face = crop_image(image_path, face['facial_area'])
         cv2.imwrite(output_file, cropped_face)
+
+        print(f'{model_data.name} => {model_data.gender}')
+        if model_data.gender:
+        # filter out faces which the gender is not matched
+          face_analysis = DeepFace.analyze(img_path = output_file,
+                                          actions=['gender'],
+                                          enforce_detection=False,
+                                          silent=True,
+                                          align=True,
+                                          detector_backend = DEEPFACE_BACKEND)
+
+          if len(face_analysis) == 0: continue
+          face_gender = face_analysis[0]['dominant_gender'].lower()
+          if model_data.gender.lower() == 'male':
+            if face_gender != 'man': continue
+          elif model_data.gender.lower() == 'female' or model_data.gender.lower() == 'shemale':
+            if face_gender != 'woman': continue
 
         face_embeddings = DeepFace.represent(img_path = output_file,
                               enforce_detection=False,
