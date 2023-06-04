@@ -89,6 +89,8 @@ def process_image(image_path,model_name, model_embeddings, processed_log_set):
 
   # extract the face embedding
   # print(f'Extracted {len(faces)} faces from {image_path}')
+  # usually when multiple faces are detected, it's a false positive and quality will be bad
+  if len(faces) > 1: return
   for face in faces:
     if face['confidence'] <= confidence_threshold:
       return
