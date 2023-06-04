@@ -24,7 +24,7 @@ for gender in names.keys():
   print(f"{gender} => {r} records")
 print(f"total {records} records loaded")
 
-for gender in names.keys():
+for gender in ['male', 'shemale', 'female']:
   for model_name in tqdm.tqdm(names[gender], desc=f'Updating {gender} models'):
     model_data = model.Model.objects(name=model_name).first()
     if not model_data: continue
