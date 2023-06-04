@@ -59,7 +59,6 @@ def process_galleries(galleries,model_name):
   for gallery in galleries:
     images = [f.path for f in os.scandir(gallery.path) if f.name.lower().endswith(".jpg")]
     for image_path in tqdm.tqdm(images, desc=f'Extracting faces from {gallery.path}'):
-      K.clear_session()
       process_image(image_path,model_name, model_embeddings, processed_log_set)
 
 
@@ -79,11 +78,14 @@ def process_image(image_path,model_name, model_embeddings, processed_log_set):
     processed_log_set.add(image_path)
     with open(processed_log, 'wb') as file:
       pickle.dump(processed_log_set, file)
+
   faces = DeepFace.extract_faces(img_path = image_path,
                                   enforce_detection = False,
                                   grayscale = False,
                                   align = False,
                                   detector_backend = DEEPFACE_BACKEND)
+  K.clear_session()
+  gc.collect()
 
   # extract the face embedding
   # print(f'Extracted {len(faces)} faces from {image_path}')
