@@ -21,7 +21,7 @@ DEEPFACE_MODEL = os.getenv("DEEPFACE_MODEL")
 
 group_face_threshold = 0.65
 common_face_threshold = 0.65
-check_similarity_threshold = 0.65
+check_similarity_threshold = 0.70
 confidence_threshold = 0.95
 min_face_size = 50
 
@@ -163,6 +163,7 @@ def init_model_face_db(model_name, galleries, output_dir):
   temp_folder = f'{model_face_folder}/temp'
   if not os.path.exists(model_face_folder): os.mkdir(model_face_folder)
   if not os.path.exists(temp_folder): os.mkdir(temp_folder)
+  detected = False
   grouped_faces_by_gallery = {}
   for gallery in galleries:
     gallery_faces = dict()
@@ -208,6 +209,12 @@ def init_model_face_db(model_name, galleries, output_dir):
     common_face = detected_common_face(grouped_faces_by_gallery, common_face_threshold)
     if len(common_face) > 0:
       save_common_face(common_face, model_face_folder, gallery_root)
-      # delete temp folder
-      shutil.rmtree(temp_folder)
+      detected = True
       break
+  if detected == False:
+    # use the most elements in the group as common face
+    grouped_face = grouped_faces_by_gallery[0]
+    common_face = grouped_face[max(grouped_face, key=lambda k: len(grouped_face[k]))]
+    save_common_face(common_face, model_face_folder, gallery_root)
+  # delete temp folder
+  shutil.rmtree(temp_folder)

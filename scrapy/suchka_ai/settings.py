@@ -1,4 +1,6 @@
 import os
+from dotenv import load_dotenv
+load_dotenv()
 # Scrapy settings for suchka_ai project
 #
 # For simplicity, this file contains only settings considered important or
@@ -99,4 +101,4 @@ FEED_EXPORT_ENCODING = "utf-8"
 ITEM_PIPELINES = {
   "suchka_ai.pipelines.SuchkaAiPipeline": 1
 }
-IMAGES_STORE = f'{os.path.dirname(os.getcwd())}/output/'
+IMAGES_STORE = os.environ['PROJECT_STORAGE_PATH']

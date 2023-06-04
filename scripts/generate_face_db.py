@@ -143,7 +143,7 @@ if __name__ == '__main__':
 
   for model_name in tqdm.tqdm(model_faces.keys(), desc="Extracting models face"):
     if not " " in model_name: continue
-    if len(model_faces[model_name]) <= 4: continue
+    # if len(model_faces[model_name]) <= 4: continue
     embedding_file = f'{output_dir}/{model_name}/embeddings.pickle'
     model_face_folder = f'{output_dir}/{model_name}'
     if not os.path.exists(model_face_folder): os.mkdir(model_face_folder)

@@ -1,1 +1,1 @@
-HTTPS_PROXY=http://proxy-server:3128 scrapy crawl pornpics -O ../output/pornpics/output.json  --logfile ../output/pornpics/log
+HTTPS_PROXY=http://proxy-server:3128 scrapy crawl pornpics_pornstar -O /storage/suchka-storage/pornpics/output-pornstar.json  --logfile /storage/suchka-storage/pornpics/log_pornstar

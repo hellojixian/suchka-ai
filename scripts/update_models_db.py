@@ -3,6 +3,8 @@ import os
 import sys
 import json
 import tqdm
+from dotenv import load_dotenv
+load_dotenv()
 
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(project_root)
@@ -11,7 +13,8 @@ import core.data_schema.model as model
 from core.database import Database
 db = Database()
 
-input_folder = sys.argv[1]
+project_folder = os.getenv("PROJECT_STORAGE_PATH")
+data_folder = f"{project_folder}/{sys.argv[1]}"
 
 processed_galleries = set()
 existing_models = dict()
@@ -30,7 +33,7 @@ def normalize_name(name):
 
 # list of all subfolders in the input folder
 galleries = set()
-for f in os.scandir(input_folder): galleries.add(f.path)
+for f in os.scandir(data_folder): galleries.add(f.path)
 for gallery in tqdm.tqdm(galleries, desc="Scanning galleries"):
   if gallery in processed_galleries: continue
   # read and parse the data.json file from the gallery folder
@@ -45,7 +48,7 @@ for gallery in tqdm.tqdm(galleries, desc="Scanning galleries"):
   if data['models'] == "": skiped_galleries_no_model_name+=1; continue
   gallery_models = data['models'].split(', ')
   gallery = model.Gallery(
-    path = gallery,
+    path = gallery.replace(f"{project_folder}/", ""),
     is_solo = len(gallery_models) == 1,
   )
   for model_name in gallery_models:
