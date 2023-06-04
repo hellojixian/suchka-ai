@@ -164,7 +164,7 @@ def process_image(image_path,model_name, model_data, model_embeddings, gender_df
     gender_df.to_pickle(gender_file)
     os.rename(temp_file, output_file)
     model_data.faces.append(model.Face(path=output_file_key, source=image_path))
-    model_embeddings[image_path] = face_embeddings[0]['embedding'],
+    model_embeddings[os.path.basename(image_path)] = face_embeddings[0]['embedding'],
     need_save = True
 
   if need_save:
@@ -179,11 +179,12 @@ def process_image(image_path,model_name, model_data, model_embeddings, gender_df
   return
 
 test_model = None
-test_model = 'James Deen'
-test_model = 'Ryan Madison'
-test_model = 'Sean Michaels'
-test_model = 'Lew Rubens'
-test_model = 'Ms Panther'
+# test_model = 'James Deen'
+# test_model = 'Ryan Madison'
+# test_model = 'Sean Michaels'
+# test_model = 'Lew Rubens'
+# test_model = 'Ms Panther'
+# test_model = 'Jimmy Rock'
 
 if __name__ == '__main__':
   if not os.path.exists(output_dir): os.makedirs(output_dir)
