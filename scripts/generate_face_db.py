@@ -29,8 +29,7 @@ db = Database()
 faces_dir = "output/faces"
 output_dir = f'{project_root}/{faces_dir}'
 confidence_threshold = 0.95
-similarity_threshold = 0.7
-min_face_size = 100
+min_face_size = 60
 
 model_faces = dict()
 DEEPFACE_BACKEND = os.getenv("DEEPFACE_BACKEND")
@@ -60,6 +59,7 @@ def process_galleries(galleries,model_name):
     images = [f.path for f in os.scandir(gallery.path) if f.name.lower().endswith(".jpg")]
     for image_path in tqdm.tqdm(images, desc=f'Extracting faces from {gallery.path}'):
       process_image(image_path,model_name, model_embeddings, processed_log_set)
+  yield model_name
 
 
 def process_image(image_path,model_name, model_embeddings, processed_log_set):
@@ -150,4 +150,4 @@ if __name__ == '__main__':
       init_model_face_db(model_name, model_faces[model_name], output_dir)
 
     for res in process_galleries(model_faces[model_name], model_name):
-      res = None
+      pass
