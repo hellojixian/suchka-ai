@@ -17,14 +17,15 @@ db = Database()
 name_file = os.path.join(os.environ['PROJECT_FACEDB_PATH'], "gender_names.pickle")
 with open(name_file, 'rb') as f:
   names = pickle.load(f)
+
 records = 0
-for gender in names.keys():
+genders = sorted(names.keys(), key=lambda gender: len(names[gender]), reverse=False)
+for gender in genders:
   r = len(names[gender])
   records += r
   print(f"{gender} => {r} records")
 print(f"total {records} records loaded")
 
-genders = sorted(names.keys(), key=lambda gender: len(names[gender]), reverse=True)
 for gender in genders:
   for model_name in tqdm.tqdm(names[gender], desc=f'Updating {gender} models'):
     model_data = model.Model.objects(name=model_name).first()
