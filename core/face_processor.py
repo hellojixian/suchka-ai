@@ -23,7 +23,7 @@ DEEPFACE_MODEL = os.getenv("DEEPFACE_MODEL")
 project_folder = os.getenv("PROJECT_STORAGE_PATH")
 group_face_threshold = 0.65
 common_face_threshold = 0.65
-check_similarity_threshold = 0.85
+check_similarity_threshold = 0.65
 confidence_threshold = 0.95
 gender_threshold = 0.85
 min_face_size = 50
@@ -92,6 +92,7 @@ def silence_tensorflow():
 def check_similarity(embedding, existing_embeddings):
   embedding_matrix = convert_dict_to_matrix(existing_embeddings)
   similarity = np.max(cosine_similarity([embedding], embedding_matrix))
+  # print('similarity', similarity)
   return similarity >= check_similarity_threshold
 
 def save_common_face(data, output_path, src_gallery_path):

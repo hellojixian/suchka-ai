@@ -164,13 +164,14 @@ def process_image(image_path,model_name, model_embeddings, processed_log_set):
   return
 
 test_model = 'James Deen'
+test_model = None
 
 if __name__ == '__main__':
   if not os.path.exists(output_dir): os.makedirs(output_dir)
 
   for m in tqdm.tqdm(model.Model.objects().all(), desc="Loading existing models"):
     # sort the galleries by is_solo
-    if test_model != '' and m.name != test_model: continue
+    if test_model and m.name != test_model: continue
     sorted_galleries = sorted(m.galleries, key=lambda x: x["is_solo"], reverse=True)
     if len(sorted_galleries) >= max_galleries_per_model: sorted_galleries = sorted_galleries[:max_galleries_per_model]
     model_faces[m.name] = sorted_galleries
