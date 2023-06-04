@@ -6,6 +6,7 @@ import tqdm
 import cv2
 import pickle
 import gc
+import keras.backend as K
 
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(project_root)
@@ -35,20 +36,12 @@ model_faces = dict()
 DEEPFACE_BACKEND = os.getenv("DEEPFACE_BACKEND")
 DEEPFACE_MODEL = os.getenv("DEEPFACE_MODEL")
 
-# def process_model():
-#   for model_name in tqdm.tqdm(model_faces.keys(), desc="Extracting models face"):
-#     if not " " in model_name: continue
-#     embedding_file = f'{output_dir}/{model_name}/embeddings.pickle'
-#     model_data = model.Model.objects(name = model_name).first()
-#     model_embeddings = []
+# Keras model has memory leak issue
+# https://github.com/serengil/deepface/issues/697
+cfg = K.tf.compat.v1.ConfigProto()
+cfg.gpu_options.allow_growth = True
+K.set_session(K.tf.compat.v1.Session(config=cfg))
 
-#     if not os.path.exists(embedding_file):
-#       # initalize the embedding files for the model
-#       init_model_face_db(model_name, model_faces[model_name], output_dir)
-
-#     with open(embedding_file, 'rb') as file:
-#       model_embeddings = pickle.load(file)
-#     yield from process_galleries(model_faces[model_name],model_name, model_data, model_embeddings)
 def process_galleries(galleries,model_name):
   model_embeddings = []
   model_embedding_file = f'{output_dir}/{model_name}/embeddings.pickle'
@@ -66,7 +59,9 @@ def process_galleries(galleries,model_name):
   for gallery in galleries:
     images = [f.path for f in os.scandir(gallery.path) if f.name.lower().endswith(".jpg")]
     for image_path in tqdm.tqdm(images, desc=f'Extracting faces from {gallery.path}'):
+      K.clear_session()
       process_image(image_path,model_name, model_embeddings, processed_log_set)
+
 
 def process_image(image_path,model_name, model_embeddings, processed_log_set):
   embedding_file = f'{output_dir}/{model_name}/embeddings.pickle'
@@ -150,5 +145,5 @@ if __name__ == '__main__':
       # initalize the embedding files for the model
       init_model_face_db(model_name, model_faces[model_name], output_dir)
 
-    for res in  process_galleries(model_faces[model_name], model_name):
+    for res in process_galleries(model_faces[model_name], model_name):
       res = None
