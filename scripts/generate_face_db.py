@@ -9,6 +9,7 @@ import gc
 import numpy as np
 import pandas as pd
 import keras.backend as K
+import signal
 
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(project_root)
@@ -48,15 +49,6 @@ cfg.gpu_options.allow_growth = True
 K.set_session(K.tf.compat.v1.Session(config=cfg))
 
 def process_galleries(galleries,model_name):
-  lock_file = f'{output_dir}/{model_name}/.lock'
-  if os.path.exists(lock_file):
-    print(f'Lock file exists for {model_name}')
-    yield model_name
-    return
-
-  with open(lock_file, 'w') as f:
-    f.write('')
-
   model_embeddings = []
   model_embedding_file = f'{output_dir}/{model_name}/embeddings.pickle'
   with open(model_embedding_file, 'rb') as file:
@@ -90,7 +82,6 @@ def process_galleries(galleries,model_name):
         pickle.dump(processed_log_set, file)
 
       process_image(image_path, model_name, model_data,  model_embeddings, gender_df)
-  os.remove(lock_file)
   yield model_name
 
 
@@ -196,6 +187,7 @@ test_model = None
 # test_model = 'Ms Panther'
 # test_model = 'Jimmy Rock'
 
+lock_file = None
 if __name__ == '__main__':
   if not os.path.exists(output_dir): os.makedirs(output_dir)
 
@@ -212,9 +204,30 @@ if __name__ == '__main__':
     embedding_file = f'{output_dir}/{model_name}/embeddings.pickle'
     model_face_folder = f'{output_dir}/{model_name}'
     if not os.path.exists(model_face_folder): os.mkdir(model_face_folder)
+
+    lock_file = f'{model_face_folder}/.lock'
+    if os.path.exists(lock_file):
+      print(f'Lock file exists for {model_name}')
+      continue
+
+    # add resource lock
+    with open(lock_file, 'w') as f:
+      f.write('')
+
     if not os.path.exists(embedding_file):
       # initalize the embedding files for the model
       init_model_face_db(model_name, model_faces[model_name], output_dir)
 
     for res in process_galleries(model_faces[model_name], model_name):
       pass
+
+    # remove resource lock
+    os.remove(lock_file)
+
+def signal_handler(signal, frame):
+    print("Ctrl+C pressed. Exiting gracefully...")
+    print(f"release lock_file: {lock_file}")
+    os.remove(lock_file)
+
+# Register the signal handler for SIGINT
+signal.signal(signal.SIGINT, signal_handler)
