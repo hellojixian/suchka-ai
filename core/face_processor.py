@@ -23,8 +23,9 @@ DEEPFACE_MODEL = os.getenv("DEEPFACE_MODEL")
 project_folder = os.getenv("PROJECT_STORAGE_PATH")
 group_face_threshold = 0.65
 common_face_threshold = 0.65
-check_similarity_threshold = 0.70
+check_similarity_threshold = 0.85
 confidence_threshold = 0.95
+gender_threshold = 0.85
 min_face_size = 50
 
 def convert_dict_to_matrix(dictionary):
@@ -90,7 +91,7 @@ def silence_tensorflow():
 
 def check_similarity(embedding, existing_embeddings):
   embedding_matrix = convert_dict_to_matrix(existing_embeddings)
-  similarity = np.mean(cosine_similarity([embedding], embedding_matrix))
+  similarity = np.max(cosine_similarity([embedding], embedding_matrix))
   return similarity >= check_similarity_threshold
 
 def save_common_face(data, output_path, src_gallery_path):
@@ -186,15 +187,16 @@ def init_model_face_db(model_name, galleries, output_dir):
       face_id = 0
       for face in faces:
         output_file = f'{temp_folder}/{gid}/{os.path.basename(image_path).replace(".jpg", "")}_{face_id}.jpg'
+        temp_file = f'{temp_folder}/temp.jpg'
         if face['confidence'] <= confidence_threshold: continue
         if face['facial_area']['w'] < min_face_size or face['facial_area']['h'] < min_face_size: continue
         cropped_face = crop_image(image_path, face['facial_area'])
-        cv2.imwrite(output_file, cropped_face)
+        cv2.imwrite(temp_file, cropped_face)
 
-        print(f'{model_data.name} => {model_data.gender}')
+        # print(f'{model_data.name} => {model_data.gender}')
         if model_data.gender:
         # filter out faces which the gender is not matched
-          face_analysis = DeepFace.analyze(img_path = output_file,
+          face_analysis = DeepFace.analyze(img_path = temp_file,
                                           actions=['gender'],
                                           enforce_detection=False,
                                           silent=True,
@@ -202,18 +204,27 @@ def init_model_face_db(model_name, galleries, output_dir):
                                           detector_backend = DEEPFACE_BACKEND)
 
           if len(face_analysis) == 0: continue
-          face_gender = face_analysis[0]['dominant_gender'].lower()
+          face_gender = face_analysis[0]['gender']
           if model_data.gender.lower() == 'male':
-            if face_gender != 'man': continue
+            # print(face_gender['Man'], gender_threshold * 100)
+            if face_gender['Man'] < gender_threshold * 100:
+              os.remove(temp_file)
+              continue
           elif model_data.gender.lower() == 'female' or model_data.gender.lower() == 'shemale':
-            if face_gender != 'woman': continue
+            if face_gender['Woman'] < gender_threshold * 100:
+              os.remove(temp_file)
+              continue
 
-        face_embeddings = DeepFace.represent(img_path = output_file,
+        face_embeddings = DeepFace.represent(img_path = temp_file,
                               enforce_detection=False,
                               align=True,
                               model_name=DEEPFACE_MODEL,
                               detector_backend = DEEPFACE_BACKEND)
-        if len(face_embeddings) != 1: continue
+        if len(face_embeddings) != 1:
+          os.remove(temp_file)
+          continue
+
+        os.rename(temp_file, output_file)
         face_embedding = face_embeddings[0]
         gallery_faces[output_file] = face_embedding['embedding']
         face_id += 1

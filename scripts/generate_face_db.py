@@ -7,6 +7,7 @@ import cv2
 import pickle
 import gc
 import keras.backend as K
+import shutil
 
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(project_root)
@@ -31,7 +32,9 @@ faces_dir = os.getenv("PROJECT_FACEDB_PATH")
 
 output_dir = faces_dir
 confidence_threshold = 0.95
+gender_threshold = 0.85
 min_face_size = 60
+max_galleries_per_model = 15
 
 model_faces = dict()
 DEEPFACE_BACKEND = os.getenv("DEEPFACE_BACKEND")
@@ -69,6 +72,7 @@ def process_image(image_path,model_name, model_embeddings, processed_log_set):
   need_save = False
   model_face_folder = f'{output_dir}/{model_name}'
   output_file = f"{model_face_folder}/{os.path.basename(image_path)}"
+  temp_file = f"{model_face_folder}/temp.jpg"
   output_file_key = f"{model_name}/{os.path.basename(image_path)}"
   processed_log = f"{model_face_folder}/processed.log"
   model_data = model.Model.objects(name = model_name).first()
@@ -107,11 +111,11 @@ def process_image(image_path,model_name, model_embeddings, processed_log_set):
       return
 
     # save the face in the output folder
-    cv2.imwrite(output_file, cropped_face)
+    cv2.imwrite(temp_file, cropped_face)
 
     if model_data.gender:
     # filter out faces which the gender is not matched
-      face_analysis = DeepFace.analyze(img_path = output_file,
+      face_analysis = DeepFace.analyze(img_path = temp_file,
                                        actions=['gender'],
                                        enforce_detection=False,
                                        silent=True,
@@ -119,22 +123,31 @@ def process_image(image_path,model_name, model_embeddings, processed_log_set):
                                        detector_backend = DEEPFACE_BACKEND)
 
       if len(face_analysis) == 0:return
-      face_gender = face_analysis[0]['dominant_gender'].lower()
+      face_gender = face_analysis[0]['gender']
       if model_data.gender.lower() == 'male':
-        if face_gender != 'man': continue
+        if face_gender['Man'] < gender_threshold * 100:
+          os.remove(temp_file)
+          return
       elif model_data.gender.lower() == 'female' or model_data.gender.lower() == 'shemale':
-        if face_gender != 'woman': continue
+        if face_gender['Woman'] < gender_threshold * 100:
+          os.remove(temp_file)
+          return
 
     # save the face embedding in the database
-    face_embeddings = DeepFace.represent(img_path = output_file,
+    face_embeddings = DeepFace.represent(img_path = temp_file,
                             enforce_detection=False,
                             align=True,
                             model_name=DEEPFACE_MODEL,
                             detector_backend = DEEPFACE_BACKEND)
-    if len(face_embeddings) == 0:return
-    if not check_similarity(face_embeddings[0]['embedding'], model_embeddings): return
+    if len(face_embeddings) == 0:
+      os.remove(temp_file)
+      return
+    if not check_similarity(face_embeddings[0]['embedding'], model_embeddings):
+      os.remove(temp_file)
+      return
     # check if face is similar to other faces in the model
 
+    os.rename(temp_file, output_file)
     model_data.faces.append(model.Face(path=output_file_key, source=image_path))
     model_embeddings[image_path] = face_embeddings[0]['embedding'],
     need_save = True
@@ -150,14 +163,16 @@ def process_image(image_path,model_name, model_embeddings, processed_log_set):
   face_embeddings = None
   return
 
+test_model = 'James Deen'
 
 if __name__ == '__main__':
   if not os.path.exists(output_dir): os.makedirs(output_dir)
 
   for m in tqdm.tqdm(model.Model.objects().all(), desc="Loading existing models"):
     # sort the galleries by is_solo
+    if test_model != '' and m.name != test_model: continue
     sorted_galleries = sorted(m.galleries, key=lambda x: x["is_solo"], reverse=True)
-    if len(sorted_galleries) >= 10: sorted_galleries = sorted_galleries[:10]
+    if len(sorted_galleries) >= max_galleries_per_model: sorted_galleries = sorted_galleries[:max_galleries_per_model]
     model_faces[m.name] = sorted_galleries
 
   for model_name in tqdm.tqdm(model_faces.keys(), desc="Extracting models face"):
