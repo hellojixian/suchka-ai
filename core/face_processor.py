@@ -19,6 +19,7 @@ load_dotenv()
 DEEPFACE_BACKEND = os.getenv("DEEPFACE_BACKEND")
 DEEPFACE_MODEL = os.getenv("DEEPFACE_MODEL")
 
+project_folder = os.getenv("PROJECT_STORAGE_PATH")
 group_face_threshold = 0.65
 common_face_threshold = 0.65
 check_similarity_threshold = 0.70
@@ -171,7 +172,7 @@ def init_model_face_db(model_name, galleries, output_dir):
     if gallery_root == "": gallery_root = gallery.path.replace(f'/{gid}', '')
     if not os.path.exists(f'{temp_folder}/{gid}'): os.mkdir(f'{temp_folder}/{gid}')
     # extract all faces from one gallery
-    images = [f.path for f in os.scandir(gallery.path) if f.name.lower().endswith(".jpg")]
+    images = [f.path for f in os.scandir(f"{project_folder}/{gallery.path}") if f.name.lower().endswith(".jpg")]
     for image_path in tqdm.tqdm(images, desc=f'Extracting init faces from {gallery.path}'):
       output_file = f'{temp_folder}/{gid}/{os.path.basename(image_path).replace(".jpg", "")}_0.jpg'
       faces = DeepFace.extract_faces(img_path = image_path,

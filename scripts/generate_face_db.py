@@ -26,8 +26,10 @@ from core.database import Database
 
 db = Database()
 
-faces_dir = "output/faces"
-output_dir = f'{project_root}/{faces_dir}'
+project_folder = os.getenv("PROJECT_STORAGE_PATH")
+faces_dir = os.getenv("PROJECT_FACEDB_PATH")
+
+output_dir = faces_dir
 confidence_threshold = 0.95
 min_face_size = 60
 
@@ -56,7 +58,7 @@ def process_galleries(galleries,model_name):
       processed_log_set = pickle.load(file)
 
   for gallery in galleries:
-    images = [f.path for f in os.scandir(gallery.path) if f.name.lower().endswith(".jpg")]
+    images = [f.path for f in os.scandir(f"{project_folder}/{gallery.path}") if f.name.lower().endswith(".jpg")]
     for image_path in tqdm.tqdm(images, desc=f'Extracting faces from {gallery.path}'):
       process_image(image_path,model_name, model_embeddings, processed_log_set)
   yield model_name
@@ -67,7 +69,7 @@ def process_image(image_path,model_name, model_embeddings, processed_log_set):
   need_save = False
   model_face_folder = f'{output_dir}/{model_name}'
   output_file = f"{model_face_folder}/{os.path.basename(image_path)}"
-  output_file_key = f"{faces_dir}/{model_name}/{os.path.basename(image_path)}"
+  output_file_key = f"{model_name}/{os.path.basename(image_path)}"
   processed_log = f"{model_face_folder}/processed.log"
 
   # if the face is already extracted, skip it
