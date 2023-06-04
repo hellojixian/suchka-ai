@@ -187,8 +187,17 @@ test_model = None
 # test_model = 'Ms Panther'
 # test_model = 'Jimmy Rock'
 
+def signal_handler(signal, frame):
+    print("Ctrl+C pressed. Exiting gracefully...")
+    print(f"release lock_file: {lock_file}")
+    if os.path.exists(lock_file): os.remove(lock_file)
+
+
 lock_file = None
 if __name__ == '__main__':
+  # Register the signal handler for SIGINT
+  signal.signal(signal.SIGINT, signal_handler)
+
   if not os.path.exists(output_dir): os.makedirs(output_dir)
 
   for m in tqdm.tqdm(model.Model.objects().all(), desc="Loading existing models"):
@@ -223,11 +232,3 @@ if __name__ == '__main__':
 
     # remove resource lock
     os.remove(lock_file)
-
-def signal_handler(signal, frame):
-    print("Ctrl+C pressed. Exiting gracefully...")
-    print(f"release lock_file: {lock_file}")
-    os.remove(lock_file)
-
-# Register the signal handler for SIGINT
-signal.signal(signal.SIGINT, signal_handler)
