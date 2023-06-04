@@ -92,7 +92,6 @@ def silence_tensorflow():
 def check_similarity(embedding, existing_embeddings):
   embedding_matrix = convert_dict_to_matrix(existing_embeddings)
   similarity = np.max(cosine_similarity([embedding], embedding_matrix))
-  # print('similarity', similarity)
   return similarity >= check_similarity_threshold
 
 def save_common_face(data, output_path, src_gallery_path):
@@ -114,6 +113,11 @@ def cluster_embeddings(embeddings, threshold):
   data = embeddings
   keys = list(data.keys())
   visited = set()
+  keys = list(data.keys())
+  for i, key in enumerate(keys):
+    values = data[key]
+    if type(values) == tuple: values = list(values)[0]
+    data[key] = values
   m = cosine_similarity(list(data.values()))
   for i in range(len(m)):
     if i in visited: continue
