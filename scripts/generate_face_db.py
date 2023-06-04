@@ -48,6 +48,15 @@ cfg.gpu_options.allow_growth = True
 K.set_session(K.tf.compat.v1.Session(config=cfg))
 
 def process_galleries(galleries,model_name):
+  lock_file = f'{output_dir}/{model_name}/.lock'
+  if os.path.exists(lock_file):
+    print(f'Lock file exists for {model_name}')
+    yield model_name
+    return
+
+  with open(lock_file, 'w') as f:
+    f.write('')
+
   model_embeddings = []
   model_embedding_file = f'{output_dir}/{model_name}/embeddings.pickle'
   with open(model_embedding_file, 'rb') as file:
@@ -81,6 +90,7 @@ def process_galleries(galleries,model_name):
         pickle.dump(processed_log_set, file)
 
       process_image(image_path, model_name, model_data,  model_embeddings, gender_df)
+  os.remove(lock_file)
   yield model_name
 
 
