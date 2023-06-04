@@ -30,5 +30,5 @@ for gender in genders:
   for model_name in tqdm.tqdm(names[gender], desc=f'Updating {gender} models'):
     model_data = model.Model.objects(name=model_name).first()
     if not model_data: continue
-    model_data.gender = 'Male'
+    model_data.gender = gender
     model_data.save()
