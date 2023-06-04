@@ -38,17 +38,20 @@ if __name__ == '__main__':
   # list all subfolders in faces_dir
   models = [f.path for f in os.scandir(faces_dir) if f.is_dir() ]
   for model_name in models:
-    gender_file = f'{model_name}/embeddings.pickle'
-    with open(gender_file, 'rb') as f:
+    data_file = f'{model_name}/embeddings.pickle'
+    if not os.path.exists(data_file): continue
+    with open(data_file, 'rb') as f:
       face_embeddings = pickle.load(f)
 
     keys = list(face_embeddings.keys())
     for k in keys:
-      face_embeddings[os.path.basename(k)] = face_embeddings[k].copy()
-      del face_embeddings[k]
+      if k != os.path.basename(k):
+        # convert the key to the basename
+        face_embeddings[os.path.basename(k)] = list(face_embeddings[k]).copy()
+        del face_embeddings[k]
 
-    with open(gender_file, 'wb') as f:
+    with open(data_file, 'wb') as f:
       f.write(pickle.dumps(face_embeddings))
-
+    # print(face_embeddings.keys())
     print(model_name)
     print('------------------')
