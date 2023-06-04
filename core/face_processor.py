@@ -111,14 +111,10 @@ def save_common_face(data, output_path, src_gallery_path):
 def cluster_embeddings(embeddings, threshold):
   groups = []
   data = embeddings
-  keys = list(data.keys())
   visited = set()
   keys = list(data.keys())
-  for i, key in enumerate(keys):
-    values = data[key]
-    if type(values) == tuple: values = list(values)[0]
-    data[key] = values
-  m = cosine_similarity(list(data.values()))
+  data_matrix = convert_dict_to_matrix(data)
+  m = cosine_similarity(data_matrix)
   for i in range(len(m)):
     if i in visited: continue
     # print(i, keys[i].replace(' ','\ '))
@@ -239,6 +235,7 @@ def init_model_face_db(model_name, galleries, output_dir):
     with open(embedding_cache_file, 'wb') as f:
       f.write(pickle.dumps(gallery_faces))
 
+    if len(gallery_faces) == 0: continue
     # group all faces by similarity of embeddings with threshold
     groupped_face = cluster_embeddings(gallery_faces, group_face_threshold)
     grouped_faces_by_gallery[gid] = groupped_face
