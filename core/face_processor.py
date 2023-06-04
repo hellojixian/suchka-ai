@@ -4,6 +4,7 @@ import logging
 import tqdm
 import sys
 import numpy as np
+import pandas as pd
 import pickle
 import shutil
 
@@ -25,7 +26,8 @@ group_face_threshold = 0.65
 common_face_threshold = 0.65
 check_similarity_threshold = 0.65
 confidence_threshold = 0.95
-gender_threshold = 0.85
+gender_threshold = 0.98
+unknown_gender_threshold = 0.9
 min_face_size = 50
 
 def convert_dict_to_matrix(dictionary):
@@ -91,22 +93,25 @@ def silence_tensorflow():
 
 def check_similarity(embedding, existing_embeddings):
   embedding_matrix = convert_dict_to_matrix(existing_embeddings)
-  similarity = np.max(cosine_similarity([embedding], embedding_matrix))
+  similarity = np.mean(cosine_similarity([embedding], embedding_matrix))
   return similarity >= check_similarity_threshold
 
-def save_common_face(data, output_path, src_gallery_path):
+def save_common_face(data, gender_df, output_path, src_gallery_path):
   embeddings = dict()
   embeddings_file = f'{output_path}/embeddings.pickle'
+  gender_file     = f'{output_path}/gender.pickle'
+  final_gender_df = pd.DataFrame(columns=["Man", "Woman"])
   # moving files
   for f,v in data.items():
     filename = os.path.basename(f).split('_')[0]+'.jpg'
-    gid = f.split('/')[-2]
-    embedding_key = f'{src_gallery_path}/{gid}/{filename}'
     shutil.copy(f, f'{output_path}/{filename}')
-    embeddings[embedding_key] = v
+    embeddings[filename] = v
+    final_gender_df.loc[filename] = gender_df.loc[f]
   # ceate embedding file
   with open(embeddings_file, 'wb') as f:
     f.write(pickle.dumps(embeddings))
+  final_gender_df.to_pickle(gender_file)
+  return
 
 def cluster_embeddings(embeddings, threshold):
   groups = []
@@ -168,6 +173,7 @@ def init_model_face_db(model_name, galleries, output_dir):
   if not os.path.exists(model_face_folder): os.mkdir(model_face_folder)
   if not os.path.exists(temp_folder): os.mkdir(temp_folder)
 
+  gender_df = pd.DataFrame(columns=["Man", "Woman"])
   model_data = model.Model.objects(name=model_name).first()
   detected = False
   grouped_faces_by_gallery = {}
@@ -195,26 +201,33 @@ def init_model_face_db(model_name, galleries, output_dir):
         cv2.imwrite(temp_file, cropped_face)
 
         # print(f'{model_data.name} => {model_data.gender}')
-        if model_data.gender:
-        # filter out faces which the gender is not matched
-          face_analysis = DeepFace.analyze(img_path = temp_file,
-                                          actions=['gender'],
-                                          enforce_detection=False,
-                                          silent=True,
-                                          align=True,
-                                          detector_backend = DEEPFACE_BACKEND)
 
-          if len(face_analysis) == 0: continue
-          face_gender = face_analysis[0]['gender']
+        # filter out faces which the gender is not matched
+        face_analysis = DeepFace.analyze(img_path = temp_file,
+                                        actions=['gender'],
+                                        enforce_detection=False,
+                                        silent=True,
+                                        align=True,
+                                        detector_backend = DEEPFACE_BACKEND)
+
+        if len(face_analysis) == 0: continue
+        face_gender = face_analysis[0]['gender']
+        if model_data.gender:
           if model_data.gender.lower() == 'male':
-            # print(face_gender['Man'], gender_threshold * 100)
             if face_gender['Man'] < gender_threshold * 100:
+              # print('not male - deleted')
               os.remove(temp_file)
               continue
+            # else: print(face_gender['Man'], gender_threshold * 100)
           elif model_data.gender.lower() == 'female' or model_data.gender.lower() == 'shemale':
             if face_gender['Woman'] < gender_threshold * 100:
               os.remove(temp_file)
               continue
+        else:
+          max_gender = np.max([face_gender['Man'], face_gender['Woman']])
+          if max_gender < unknown_gender_threshold * 100:
+            os.remove(temp_file)
+            continue
 
         face_embeddings = DeepFace.represent(img_path = temp_file,
                               enforce_detection=False,
@@ -225,6 +238,7 @@ def init_model_face_db(model_name, galleries, output_dir):
           os.remove(temp_file)
           continue
 
+        gender_df.loc[output_file] = pd.Series(face_gender, index=gender_df.columns)
         os.rename(temp_file, output_file)
         face_embedding = face_embeddings[0]
         gallery_faces[output_file] = face_embedding['embedding']
@@ -242,13 +256,13 @@ def init_model_face_db(model_name, galleries, output_dir):
     # find the common embedding so far
     common_face = detected_common_face(grouped_faces_by_gallery, common_face_threshold)
     if len(common_face) > 0:
-      save_common_face(common_face, model_face_folder, gallery_root)
+      save_common_face(common_face, gender_df, model_face_folder, gallery_root)
       detected = True
       break
   if detected == False:
     # use the most elements in the group as common face
     grouped_face = grouped_faces_by_gallery[0]
     common_face = grouped_face[max(grouped_face, key=lambda k: len(grouped_face[k]))]
-    save_common_face(common_face, model_face_folder, gallery_root)
+    save_common_face(common_face, gender_df, model_face_folder, gallery_root)
   # delete temp folder
   shutil.rmtree(temp_folder)

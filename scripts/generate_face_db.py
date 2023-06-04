@@ -6,8 +6,9 @@ import tqdm
 import cv2
 import pickle
 import gc
+import numpy as np
+import pandas as pd
 import keras.backend as K
-import shutil
 
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(project_root)
@@ -18,7 +19,6 @@ from core.face_processor import crop_image, silence_tensorflow,\
 silence_tensorflow()
 
 from deepface import DeepFace
-import deepface.detectors.FaceDetector as fd
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -32,7 +32,8 @@ faces_dir = os.getenv("PROJECT_FACEDB_PATH")
 
 output_dir = faces_dir
 confidence_threshold = 0.95
-gender_threshold = 0.85
+gender_threshold = 0.98
+unknown_gender_threshold = 0.9
 min_face_size = 60
 max_galleries_per_model = 15
 
@@ -60,31 +61,38 @@ def process_galleries(galleries,model_name):
     with open(processed_log, 'rb') as file:
       processed_log_set = pickle.load(file)
 
+  model_data = model.Model.objects(name = model_name).first()
+  gender_df = pd.DataFrame(columns=["Man", "Woman"])
+  if not model_data.gender:
+    gender_file = f'{model_face_folder}/gender.pickle'
+    # patching gender
+    if os.path.exists(gender_file):
+      gender_df = pd.read_pickle(gender_file)
+      gender_mean = gender_df.mean()
+      model_data.gender = 'male' if gender_mean['Man'] > gender_mean['Woman'] else 'female'
+
   for gallery in galleries:
     images = [f.path for f in os.scandir(f"{project_folder}/{gallery.path}") if f.name.lower().endswith(".jpg")]
     for image_path in tqdm.tqdm(images, desc=f'Extracting faces from {gallery.path}'):
-      process_image(image_path,model_name, model_embeddings, processed_log_set)
+      if image_path in processed_log_set: continue
+
+      processed_log_set.add(image_path)
+      with open(processed_log, 'wb') as file:
+        pickle.dump(processed_log_set, file)
+
+      process_image(image_path, model_name, model_data,  model_embeddings, gender_df)
   yield model_name
 
 
-def process_image(image_path,model_name, model_embeddings, processed_log_set):
+def process_image(image_path,model_name, model_data, model_embeddings, gender_df):
   embedding_file = f'{output_dir}/{model_name}/embeddings.pickle'
   need_save = False
   model_face_folder = f'{output_dir}/{model_name}'
   output_file = f"{model_face_folder}/{os.path.basename(image_path)}"
   temp_file = f"{model_face_folder}/temp.jpg"
+  gender_file = f'{model_face_folder}/gender.pickle'
   output_file_key = f"{model_name}/{os.path.basename(image_path)}"
-  processed_log = f"{model_face_folder}/processed.log"
-  model_data = model.Model.objects(name = model_name).first()
   # if the face is already extracted, skip it
-  if image_path in processed_log_set:
-    # print('skipping - already processed', image_path)
-    return
-  else:
-    processed_log_set.add(image_path)
-    with open(processed_log, 'wb') as file:
-      pickle.dump(processed_log_set, file)
-
   faces = DeepFace.extract_faces(img_path = image_path,
                                   enforce_detection = False,
                                   grayscale = False,
@@ -113,17 +121,17 @@ def process_image(image_path,model_name, model_embeddings, processed_log_set):
     # save the face in the output folder
     cv2.imwrite(temp_file, cropped_face)
 
-    if model_data.gender:
     # filter out faces which the gender is not matched
-      face_analysis = DeepFace.analyze(img_path = temp_file,
-                                       actions=['gender'],
-                                       enforce_detection=False,
-                                       silent=True,
-                                       align=True,
-                                       detector_backend = DEEPFACE_BACKEND)
+    face_analysis = DeepFace.analyze(img_path = temp_file,
+                                      actions=['gender'],
+                                      enforce_detection=False,
+                                      silent=True,
+                                      align=True,
+                                      detector_backend = DEEPFACE_BACKEND)
 
-      if len(face_analysis) == 0:return
-      face_gender = face_analysis[0]['gender']
+    if len(face_analysis) == 0:return
+    face_gender = face_analysis[0]['gender']
+    if model_data.gender:
       if model_data.gender.lower() == 'male':
         if face_gender['Man'] < gender_threshold * 100:
           os.remove(temp_file)
@@ -132,6 +140,11 @@ def process_image(image_path,model_name, model_embeddings, processed_log_set):
         if face_gender['Woman'] < gender_threshold * 100:
           os.remove(temp_file)
           return
+    else:
+      max_gender = np.max([face_gender['Man'], face_gender['Woman']])
+      if max_gender < unknown_gender_threshold * 100:
+        os.remove(temp_file)
+        return
 
     # save the face embedding in the database
     face_embeddings = DeepFace.represent(img_path = temp_file,
@@ -142,11 +155,13 @@ def process_image(image_path,model_name, model_embeddings, processed_log_set):
     if len(face_embeddings) == 0:
       os.remove(temp_file)
       return
+    # check if face is similar to other faces in the model
     if not check_similarity(face_embeddings[0]['embedding'], model_embeddings):
       os.remove(temp_file)
       return
-    # check if face is similar to other faces in the model
 
+    gender_df.loc[os.path.basename(image_path)] = pd.Series(face_gender, index=gender_df.columns)
+    gender_df.to_pickle(gender_file)
     os.rename(temp_file, output_file)
     model_data.faces.append(model.Face(path=output_file_key, source=image_path))
     model_embeddings[image_path] = face_embeddings[0]['embedding'],
@@ -163,8 +178,12 @@ def process_image(image_path,model_name, model_embeddings, processed_log_set):
   face_embeddings = None
   return
 
-test_model = 'James Deen'
 test_model = None
+test_model = 'James Deen'
+test_model = 'Ryan Madison'
+test_model = 'Sean Michaels'
+test_model = 'Lew Rubens'
+test_model = 'Ms Panther'
 
 if __name__ == '__main__':
   if not os.path.exists(output_dir): os.makedirs(output_dir)
