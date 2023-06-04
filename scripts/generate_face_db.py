@@ -136,8 +136,8 @@ if __name__ == '__main__':
   for m in tqdm.tqdm(model.Model.objects().all(), desc="Loading existing models"):
     # sort the galleries by is_solo
     sorted_galleries = sorted(m.galleries, key=lambda x: x["is_solo"], reverse=True)
-    model_faces[m.name] = sorted_galleries.copy()
-    sorted_galleries.clear()
+    if len(sorted_galleries) >= 10: sorted_galleries = sorted_galleries[:10]
+    model_faces[m.name] = sorted_galleries
 
   for model_name in tqdm.tqdm(model_faces.keys(), desc="Extracting models face"):
     if not " " in model_name: continue
