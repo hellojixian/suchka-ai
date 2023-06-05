@@ -49,7 +49,7 @@ cfg.gpu_options.allow_growth = True
 K.set_session(K.tf.compat.v1.Session(config=cfg))
 
 def process_galleries(galleries,model_name):
-  model_embeddings = []
+  model_embeddings = dict()
   model_embedding_file = f'{output_dir}/{model_name}/embeddings.pickle'
   if os.path.exists(model_embedding_file):
     with open(model_embedding_file, 'rb') as file:
@@ -158,9 +158,10 @@ def process_image(image_path,model_name, model_data, model_embeddings, gender_df
       os.remove(temp_file)
       return
     # check if face is similar to other faces in the model
-    if not check_similarity(face_embeddings[0]['embedding'], model_embeddings):
-      os.remove(temp_file)
-      return
+    if len(model_embeddings) > 0:
+      if not check_similarity(face_embeddings[0]['embedding'], model_embeddings):
+        os.remove(temp_file)
+        return
 
     gender_df.loc[os.path.basename(image_path)] = pd.Series(face_gender, index=gender_df.columns)
     gender_df.to_pickle(gender_file)
