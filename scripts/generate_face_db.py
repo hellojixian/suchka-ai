@@ -51,8 +51,9 @@ K.set_session(K.tf.compat.v1.Session(config=cfg))
 def process_galleries(galleries,model_name):
   model_embeddings = []
   model_embedding_file = f'{output_dir}/{model_name}/embeddings.pickle'
-  with open(model_embedding_file, 'rb') as file:
-    model_embeddings = pickle.load(file)
+  if os.path.exists(model_embedding_file):
+    with open(model_embedding_file, 'rb') as file:
+      model_embeddings = pickle.load(file)
 
   model_face_folder = f'{output_dir}/{model_name}'
   processed_log = f"{model_face_folder}/processed.log"
