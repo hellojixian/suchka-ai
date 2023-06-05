@@ -261,11 +261,14 @@ def init_model_face_db(model_name, galleries, output_dir):
       break
   if detected == False:
     # use the most elements in the group as common face
-    gid = list(grouped_faces_by_gallery.keys())[0]
-    grouped_face = grouped_faces_by_gallery[gid]
-    most_elements = [len(grouped_face[id]) for id in range(len(grouped_face))]
-    idx = most_elements.index(max(most_elements))
-    common_face = grouped_face[idx]
-    save_common_face(common_face, gender_df, model_face_folder, gallery_root)
+    gids = list(grouped_faces_by_gallery.keys())
+    for gid in gids:
+      grouped_face = grouped_faces_by_gallery[gid]
+      if len(grouped_face) == 0: continue
+      most_elements = [len(grouped_face[id]) for id in range(len(grouped_face))]
+      idx = most_elements.index(max(most_elements))
+      common_face = grouped_face[idx]
+      save_common_face(common_face, gender_df, model_face_folder, gallery_root)
+      break
   # delete temp folder
   shutil.rmtree(temp_folder)

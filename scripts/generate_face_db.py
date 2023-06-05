@@ -185,7 +185,7 @@ test_model = None
 # test_model = 'Sean Michaels'
 # test_model = 'Lew Rubens'
 # test_model = 'Ms Panther'
-# test_model = 'Neela A'
+# test_model = 'Nicole Pitty'
 
 def signal_handler(signal, frame):
     print("Ctrl+C pressed. Exiting gracefully...")
