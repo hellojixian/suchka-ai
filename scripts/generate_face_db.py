@@ -185,12 +185,13 @@ test_model = None
 # test_model = 'Sean Michaels'
 # test_model = 'Lew Rubens'
 # test_model = 'Ms Panther'
-# test_model = 'Jimmy Rock'
+# test_model = 'Neela A'
 
 def signal_handler(signal, frame):
     print("Ctrl+C pressed. Exiting gracefully...")
     print(f"release lock_file: {lock_file}")
     if os.path.exists(lock_file): os.remove(lock_file)
+    sys.exit(0)
 
 
 lock_file = None
