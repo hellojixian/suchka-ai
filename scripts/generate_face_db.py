@@ -181,6 +181,7 @@ def process_image(image_path,model_name, model_data, model_embeddings, gender_df
   face_embeddings = None
   return
 
+bad_names = ['Add To Favorites']
 test_model = None
 # test_model = 'James Deen'
 # test_model = 'Ryan Madison'
@@ -214,7 +215,9 @@ if __name__ == '__main__':
   model_names = sorted(model_faces.keys(), key=lambda x: len(model_faces[x]), reverse=True)
 
   for model_name in tqdm.tqdm(model_names, desc="Extracting models face"):
+    # filter out models with no space in the name and bad names
     if not " " in model_name: continue
+    if model_name in bad_names: continue
     # if len(model_faces[model_name]) <= 4: continue
     embedding_file = f'{output_dir}/{model_name}/embeddings.pickle'
     model_face_folder = f'{output_dir}/{model_name}'
