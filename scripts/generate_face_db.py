@@ -208,7 +208,6 @@ if __name__ == '__main__':
     # sort the galleries by is_solo
     if test_model and m.name != test_model: continue
     sorted_galleries = sorted(m.galleries, key=lambda x: x["is_solo"], reverse=True)
-    if len(sorted_galleries) >= max_galleries_per_model: sorted_galleries = sorted_galleries[:max_galleries_per_model]
     model_faces[m.name] = sorted_galleries
 
   # sort the model_names by number of galleries
@@ -218,6 +217,9 @@ if __name__ == '__main__':
     # filter out models with no space in the name and bad names
     if not " " in model_name: continue
     if model_name in bad_names: continue
+
+    galleries = model_faces[model_name]
+    if len(galleries) >= max_galleries_per_model: galleries = galleries[:max_galleries_per_model]
     # if len(model_faces[model_name]) <= 4: continue
     embedding_file = f'{output_dir}/{model_name}/embeddings.pickle'
     model_face_folder = f'{output_dir}/{model_name}'
@@ -234,9 +236,9 @@ if __name__ == '__main__':
 
     if not os.path.exists(embedding_file):
       # initalize the embedding files for the model
-      init_model_face_db(model_name, model_faces[model_name], output_dir)
+      init_model_face_db(model_name, galleries, output_dir)
 
-    for res in process_galleries(model_faces[model_name], model_name):
+    for res in process_galleries(galleries, model_name):
       pass
 
     # remove resource lock
