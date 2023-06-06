@@ -210,7 +210,10 @@ if __name__ == '__main__':
     if len(sorted_galleries) >= max_galleries_per_model: sorted_galleries = sorted_galleries[:max_galleries_per_model]
     model_faces[m.name] = sorted_galleries
 
-  for model_name in tqdm.tqdm(model_faces.keys(), desc="Extracting models face"):
+  # sort the model_names by number of galleries
+  model_names = sorted(model_faces.keys(), key=lambda x: len(model_faces[x]), reverse=True)
+
+  for model_name in tqdm.tqdm(model_names, desc="Extracting models face"):
     if not " " in model_name: continue
     # if len(model_faces[model_name]) <= 4: continue
     embedding_file = f'{output_dir}/{model_name}/embeddings.pickle'
