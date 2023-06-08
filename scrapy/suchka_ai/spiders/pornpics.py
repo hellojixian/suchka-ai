@@ -41,7 +41,7 @@ class PornpicsSpider(scrapy.Spider):
         tags = ", ".join(response.css(".gallery-info .tags a span::text").getall())
         description = response.css(".title-section.gallery h1::text").get()
         models = ", ".join(response.css(".gallery-info .gallery-info__item:nth-child(2) a span::text").getall())
-        copyright = response.css(".gallery-info__item a::text").get()
+        copyright =  ", ".join(response.css(".gallery-info__item a::text").getall())
         image_urls = response.css(".gallery-ps4 .thumbwook a::attr(href)").getall()
         pair = ImageCaptionPairItem()
         pair['id'] = re.search(r"var ID\s+=\s+'([0-9]+)'",response.text).group(1)

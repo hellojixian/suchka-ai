@@ -242,4 +242,4 @@ if __name__ == '__main__':
       pass
 
     # remove resource lock
-    os.remove(lock_file)
+    if os.path.exists(lock_file): os.remove(lock_file)
