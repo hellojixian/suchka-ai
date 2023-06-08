@@ -36,7 +36,9 @@ CONCURRENT_REQUESTS = 30
 #COOKIES_ENABLED = False
 
 # Disable Telnet Console (enabled by default)
-#TELNETCONSOLE_ENABLED = False
+TELNETCONSOLE_ENABLED = True
+TELNETCONSOLE_USERNAME = 'suchka'
+TELNETCONSOLE_PASSWORD = 'jixian'
 
 # Override the default request headers:
 #DEFAULT_REQUEST_HEADERS = {

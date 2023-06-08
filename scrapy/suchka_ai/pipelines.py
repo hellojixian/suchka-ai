@@ -55,13 +55,22 @@ class SuchkaAiPipeline(ImagesPipeline):
     image = Image.open(full_path)
     try:
       exif_dict = piexif.load(image.info['exif']) if 'exif' in image.info else {"0th": {}}
-      exif_dict["0th"][piexif.ImageIFD.XPKeywords] = item['tags'].encode(encoding='utf_16')
-      exif_dict["0th"][piexif.ImageIFD.XPAuthor] = item['copyright'].encode(encoding='utf_16')
-      exif_dict["0th"][piexif.ImageIFD.XPSubject] = item['description'].encode(encoding='utf_16')
-      exif_dict["0th"][piexif.ImageIFD.XPComment] = item['source'].encode(encoding='utf_16')
-      exif_dict["0th"][piexif.ImageIFD.ImageDescription] = item['description'].encode(encoding='utf-8')
-      exif_dict["0th"][piexif.ImageIFD.Artist] = item['models'].encode(encoding='utf-8')
-      exif_dict["0th"][piexif.ImageIFD.Copyright] = item['copyright'].encode(encoding='utf-8')
+      if item['tags']:
+        exif_dict["0th"][piexif.ImageIFD.XPKeywords] = item['tags'].encode(encoding='utf_16')
+
+      if item['copyright']:
+        exif_dict["0th"][piexif.ImageIFD.XPAuthor] = item['copyright'].encode(encoding='utf_16')
+        exif_dict["0th"][piexif.ImageIFD.Copyright] = item['copyright'].encode(encoding='utf-8')
+
+      if item['description']:
+        exif_dict["0th"][piexif.ImageIFD.XPSubject] = item['description'].encode(encoding='utf_16')
+        exif_dict["0th"][piexif.ImageIFD.ImageDescription] = item['description'].encode(encoding='utf-8')
+
+      if item['source']:
+        exif_dict["0th"][piexif.ImageIFD.XPComment] = item['source'].encode(encoding='utf_16')
+
+      if item['models']:
+        exif_dict["0th"][piexif.ImageIFD.Artist] = item['models'].encode(encoding='utf-8')
 
       if 'thumbnail' in exif_dict:
         exif_dict['thumbnail'] = None if exif_dict['thumbnail'] == b'' else exif_dict['thumbnail']
