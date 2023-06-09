@@ -58,6 +58,7 @@ for gallery in tqdm.tqdm(galleries, desc="Scanning galleries"):
 
   # !!! check if the gallery is already in the database
   if ',' not in data['copyright']: continue
+  gallery_path = os.path.abspath(f"{data_folder}/{gallery}")
 
   gallery_models = data['models'].split(', ') if data['models'] else []
   gallery_models = [normalize_name(m) for m in gallery_models]
@@ -115,26 +116,27 @@ for gallery in tqdm.tqdm(galleries, desc="Scanning galleries"):
     channels = existing_channels,
     tags = existing_tags,
     models = existing_models,
-    path = gallery.replace(f"{project_folder}/", ""),
+    path = gallery_path.replace(f"{project_folder}/", ""),
     is_solo = len(gallery_models) == 1,
   )
   # try:
   gallery_obj.save()
 
+sys.exit()
 
 models = model.Model.objects().all()
 for model_obj in tqdm.tqdm(models, desc="Update Models => Galleries index"):
-  model_obj.galleries = model.Gallery.objects(models__name=model_obj.name)
+  model_obj.galleries = model.Gallery.objects(models=model_obj.id)
   model_obj.save()
 
 tags = model.Tag.objects().all()
 for tag in tqdm.tqdm(tags, desc="Update Tags => Galleries index"):
-  tag.galleries = model.Tag.objects(tags__name=tag.name)
+  tag.galleries = model.Gallery.objects(tags=tag.id)
   tag.save()
 
 channels = model.Channel.objects().all()
 for channel in tqdm.tqdm(channels, desc="Update Channel => Galleries index"):
-  channel.galleries = model.Channel.objects(channel=channel.name)
+  channel.galleries = model.Gallery.objects(channels=channel.id)
   channel.save()
 
 for model_obj in tqdm.tqdm(models, desc="Update Models => Tags index"):
