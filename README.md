@@ -61,3 +61,19 @@ pyvis
 ```sh
 source $CONDA_PREFIX/etc/conda/activate.d/env_vars.sh
 ```
+
+
+### Useful checker
+```js
+// check if duplicate records, expect to be empty output
+db.gallery.aggregate([ { $group: { _id: "$gid", count: { $sum: 1 } } }, { $match: { count: { $gt: 1 } } }]);
+db.channel.aggregate([ { $group: { _id: "$name", count: { $sum: 1 } } }, { $match: { count: { $gt: 1 } } }]);
+db.model.aggregate([ { $group: { _id: "$name", count: { $sum: 1 } } }, { $match: { count: { $gt: 1 } } }]);
+db.tag.aggregate([ { $group: { _id: "$name", count: { $sum: 1 } } }, { $match: { count: { $gt: 1 } } }]);
+
+// check data records for each collection
+db.getCollectionNames().forEach((collectionName) => {
+  const count = db.getCollection(collectionName).countDocuments();
+  print(`Collection: ${collectionName}, Count: ${count}`);
+});
+```
