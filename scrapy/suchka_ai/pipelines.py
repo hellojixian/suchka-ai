@@ -75,10 +75,13 @@ class SuchkaAiPipeline(ImagesPipeline):
       if 'thumbnail' in exif_dict:
         exif_dict['thumbnail'] = None if exif_dict['thumbnail'] == b'' else exif_dict['thumbnail']
 
+      exif_dict['Exif'][41728] = b''
       exif_bytes = piexif.dump(exif_dict)
       image.save(full_path, exif=exif_bytes)
-    finally:
       image.close()
+    except Exception as e:
+      image.close()
+    finally:
       del image
 
   def file_path(self, request, response=None, info=None, *, item=None):
