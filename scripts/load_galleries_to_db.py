@@ -60,14 +60,16 @@ for gallery in tqdm.tqdm(galleries, desc="Scanning galleries"):
   if ',' not in data['copyright']: continue
 
   gallery_models = data['models'].split(', ') if data['models'] else []
+  gallery_models = [normalize_name(m) for m in gallery_models]
   existing_models = model.Model.objects(name__in=gallery_models)
   existing_models = [m for m in existing_models]
-  existing_model_names = [m.name for m in existing_models]
+  existing_model_names = [normalize_name(m.name) for m in existing_models]
+
   for model_name in gallery_models:
     if model_name not in existing_model_names:
       # create a new model
       new_model = model.Model(
-        name = normalize_name(model_name),
+        name = model_name,
         galleries = [],
         channels = [],
         tags = [],
