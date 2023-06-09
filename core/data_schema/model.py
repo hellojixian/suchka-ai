@@ -21,7 +21,7 @@ class Model(Document):
 # tag object
 class TagModel(EmbeddedDocument):
   model = ReferenceField(Model, reverse_delete_rule=DO_NOTHING)
-  count = IntField(required=True)
+  galleries = IntField(required=True)
 
 class Tag(Document):
   name = StringField(required=True)
@@ -32,11 +32,11 @@ class Tag(Document):
 # channel object
 class ChannelModel(EmbeddedDocument):
   model = ReferenceField(Model, reverse_delete_rule=DO_NOTHING)
-  count = IntField(required=True)
+  galleries = IntField(required=True)
 
 class ChanneTag(EmbeddedDocument):
   tag = ReferenceField(Tag, reverse_delete_rule=DO_NOTHING)
-  count = IntField(required=True)
+  galleries = IntField(required=True)
 
 class Channel(Document):
   name = StringField(required=True)

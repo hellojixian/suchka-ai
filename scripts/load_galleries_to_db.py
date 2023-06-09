@@ -140,52 +140,54 @@ for channel in tqdm.tqdm(channels, desc="Update Channel => Galleries index"):
   channel.save()
 
 for model_obj in tqdm.tqdm(models, desc="Update Models => Tags index"):
-  model_tags = model.Tag.objects(models__name=model_obj.name)
+  model_tags = model.Tag.objects(models=model_obj.id)
   model_obj.tags = []
   for tag in model_tags:
     new_model_tag = model.ModelTag(
       tag = tag,
-      count = len(model.Gallery.objects(tags__name=tag.name, models__name=model_obj.name))
+      count = len(model.Gallery.objects(tags=tag.id, models=model_obj.id))
     )
     model_obj.tags.append(new_model_tag)
   model_obj.save()
 
 for model_obj in tqdm.tqdm(models, desc="Update Models => Channel index"):
-  galleries = model.Gallery.objects(channel=model_obj.name)
+  galleries = model.Gallery.objects(channel=model_obj.id)
   model_obj.channels = []
   for gallery in galleries:
-    channel = model.Channel.objects(name=gallery.channel)
-    if channel.name not in [c.name for c in model_obj.channels]:
-      model_obj.channels.append(channel)
+    for channel in gallery.channels:
+      if channel not in model_obj.channels:
+        print(f"channel: {channel.name}")
+        model_obj.channels.append(channel)
+  print("Saving model")
   model_obj.save()
 
 for tag in tqdm.tqdm(tags, desc="Update Tags => Models index"):
-  tag_models = model.Model.objects(tags_name=tag.name)
+  tag_models = model.Model.objects(tags=tag.id)
   tag.models = []
   for model_obj in tag_models:
     new_tag_model = model_obj.TagModel(
       model = model_obj,
-      count = len(model.Gallery.objects(tags__name=tag.name, models__name=model_obj.name))
+      galleries = len(model.Gallery.objects(tags=tag.id, models=model_obj.id))
     )
     tag.models.append(new_tag_model)
   tag.save()
 
 for channel in tqdm.tqdm(channels, desc="Update Channel => Models, Tags index"):
-  channel_models = model.Model.objects(channel=channel.name)
+  channel_models = model.Model.objects(channels=channel.id)
   channel.models = []
   for model_obj in channel_models:
     new_channel_model = model.ChannelModel(
       model = model_obj,
-      count = len(model.Gallery.objects(channel=channel.name, models__name=model_obj.name))
+      galleries = len(model.Gallery.objects(channels=channel.id, models=model_obj.id))
     )
     channel.models.append(new_channel_model)
 
-  channel_tags = model.Tag.objects(channel=channel.name)
+  channel_tags = model.Tag.objects(channels=channel.id)
   channel.tags = []
   for tag in channel_tags:
     new_channel_tag = model.ChanneTag(
       tag = tag,
-      count = len(model.Gallery.objects(channel=channel.name, tags__name=tag.name))
+      galleries = len(model.Gallery.objects(channels=channel.id, tags=tag.id))
     )
-    channel.models.append(new_channel_model)
+    channel.tags.append(new_channel_tag)
   channel.save()
