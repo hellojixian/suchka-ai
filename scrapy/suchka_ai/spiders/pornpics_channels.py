@@ -19,7 +19,8 @@ class PornpicsSpider(scrapy.Spider):
       data_folder = os.path.join(self.settings.get('IMAGES_STORE'), self.folder_name)
 
       galleries = set()
-      for f in os.scandir(data_folder): galleries.add(f)
+      folders = [f for f in os.listdir(data_folder) if os.path.isdir(os.path.join(data_folder, f))]
+      for f in folders: galleries.add(f)
 
       # sort galleries by name
       galleries = sorted(galleries, key=lambda f: f.name)

@@ -30,7 +30,8 @@ def normalize_name(name):
 skiped_galleries_no_json = 0
 # list of all subfolders in the input folder
 galleries = set()
-for f in os.scandir(data_folder): galleries.add(f.path)
+folders = [f for f in os.listdir(data_folder) if os.path.isdir(os.path.join(data_folder, f))]
+for f in folders: galleries.add(f)
 # sort galleries by name
 galleries = sorted(galleries, key=lambda f: f.name)
 for gallery in tqdm.tqdm(galleries, desc="Scanning galleries"):
