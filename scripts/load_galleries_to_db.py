@@ -57,7 +57,8 @@ for gallery in tqdm.tqdm(galleries, desc="Scanning galleries"):
       json_file.write(json.dumps(data))
 
   # !!! check if the gallery is already in the database
-  if ',' not in data['copyright']: continue
+  #if ',' not in data['copyright']: continue
+
   gallery_path = os.path.abspath(f"{data_folder}/{gallery}")
 
   gallery_models = data['models'].split(', ') if data['models'] else []
@@ -122,7 +123,18 @@ for gallery in tqdm.tqdm(galleries, desc="Scanning galleries"):
   # try:
   gallery_obj.save()
 
-sys.exit()
+galleries = model.Gallery.objects(__raw__={ '$expr': { '$gte': [{ '$size': '$channels' }, 2]} })
+for gallery in tqdm.tqdm(galleries, desc="Update Channel's parent index"):
+  channels = gallery.channels
+  has_new_child = False
+  for i in range(1, len(channels)):
+    if channels[i] not in channels[0].children:
+      has_new_child = True
+      channels[0].children.append(channels[i])
+    if channels[i].parent != channels[0]:
+      channels[i].parent = channels[0]
+      channels[i].save()
+  if has_new_child: channels[0].save()
 
 models = model.Model.objects().all()
 for model_obj in tqdm.tqdm(models, desc="Update Models => Galleries index"):

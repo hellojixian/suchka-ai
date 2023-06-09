@@ -40,6 +40,11 @@ class ChanneTag(EmbeddedDocument):
 
 class Channel(Document):
   name = StringField(required=True)
+  logo = StringField()
+  background_color = StringField()
+  url = StringField()
+  parent = ReferenceField('Channel', reverse_delete_rule=DO_NOTHING)
+  children = ListField(ReferenceField('Channel', reverse_delete_rule=DO_NOTHING))
   galleries = ListField(ReferenceField('Gallery', reverse_delete_rule=DO_NOTHING))
   models = ListField(ReferenceField('ChannelModel', reverse_delete_rule=DO_NOTHING))
   tags = ListField(ReferenceField('ChannelTag', reverse_delete_rule=DO_NOTHING))
