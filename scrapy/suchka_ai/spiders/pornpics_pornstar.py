@@ -44,17 +44,20 @@ class PornpicsSpider(scrapy.Spider):
         models = ", ".join(response.css(".gallery-info .gallery-info__item:nth-child(2) a span::text").getall())
         copyright =  ", ".join(response.css(".gallery-info__item a::text").getall())
         image_urls = response.css(".gallery-ps4 .thumbwook a::attr(href)").getall()
-        pair = ImageCaptionPairItem()
-        pair['id'] = re.search(r"var ID\s+=\s+'([0-9]+)'",response.text).group(1)
-        if self.is_duplicated(pair['id']): return
-        pair['source'] = self.folder_name
-        pair['models'] = models
-        pair['copyright'] = copyright
-        pair['tags'] = tags
-        pair['url'] = response.url
-        pair['image_urls'] = image_urls
-        pair['description'] = description
-        yield pair
+        try:
+            pair = ImageCaptionPairItem()
+            pair['id'] = re.search(r"var ID\s+=\s+'([0-9]+)'",response.text).group(1)
+            if self.is_duplicated(pair['id']): return
+            pair['source'] = self.folder_name
+            pair['models'] = models
+            pair['copyright'] = copyright
+            pair['tags'] = tags
+            pair['url'] = response.url
+            pair['image_urls'] = image_urls
+            pair['description'] = description
+            yield pair
+        except Exception as e:
+            pass
 
     def is_duplicated(self, id):
         data_path = os.path.join(self.settings.get('IMAGES_STORE'), self.folder_name, id, 'data.json')
