@@ -144,6 +144,7 @@ pymongo_client = MongoClient(os.environ.get('MONGODB_URI'))
 pydb = pymongo_client.get_database()
 
 
+
 if index_source == 'cache':
   print("Loading cached index files")
 
@@ -151,35 +152,32 @@ if index_source == 'cache':
   with open(cached_channels_file, 'rb') as f:
     cached_channels = pickle.load(f)
   print(f"Loaded {len(cached_channels)} channels")
-
 for channel_id, channel in tqdm.tqdm(cached_channels.items(), desc="Update channels bulk operations"):
-  print(channel_id,  len(channel["models"]))
   res = pydb.channel.update_one(
   filter = {"_id": channel_id},
   update = {"$set": {
-    "galleries": len(channel["galleries"]),
+    "galleries": list(channel["galleries"]),
     "tags": convert_dict_to_galleries("tag", channel["tags"]),
     "models": convert_dict_to_galleries("model", channel["models"]),
-    "galleries": convert_dict_to_galleries("gallery", channel["galleries"]),
   }})
   if res.matched_count != 1:
     print(res.raw_result)
     raise Exception(f"Update channel {channel_id} failed")
 del cached_channels
 
+
+
 if index_source == 'cache':
   with open(cached_tags_file, 'rb') as f:
     cached_tags = pickle.load(f)
   print(f"Loaded {len(cached_tags)} tags")
-
 for tag_id, tag in tqdm.tqdm(cached_tags.items(), desc="Update tags bulk operations"):
   res = pydb.tag.update_one(
   filter = {"_id": tag_id},
   update = {"$set": {
-    "galleries": len(tag["galleries"]),
+    "galleries": list(tag["galleries"]),
     "channels": convert_dict_to_galleries("channel", tag["channels"]),
     "models": convert_dict_to_galleries("model", tag["models"]),
-    "galleries": convert_dict_to_galleries("gallery", tag["galleries"]),
   }})
   if res.matched_count != 1:
     print(res.raw_result)
@@ -192,12 +190,11 @@ if index_source == 'cache':
   with open(cached_models_file, 'rb') as f:
     cached_models = pickle.load(f)
   print(f"Loaded {len(cached_models)} models")
-
 for model_id, model in tqdm.tqdm(cached_models.items(), desc="Update models bulk operations"):
   res = pydb.model.update_one(
   filter = {"_id": model_id},
   update = {"$set": {
-    "galleries": convert_dict_to_galleries("gallery", model["galleries"]),
+    "galleries": list(model["galleries"]),
     "channels": convert_dict_to_galleries("channel", model["channels"]),
     "tags": convert_dict_to_galleries("tag", model["tags"]),
     "models": convert_dict_to_galleries("model", model["models"]),
