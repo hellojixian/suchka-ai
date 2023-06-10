@@ -21,16 +21,15 @@ db = Database()
 checked_channels = set()
 galleries = model.Gallery.objects(__raw__={  '$expr': { '$gte': [{ '$size': '$channels' }, 2]} })
 for gallery in tqdm.tqdm(galleries, desc="Update Channel's parent index"):
-  channels = gallery.channels
-  for i in range(1, len(channels)):
-    if channels[i].id in checked_channels: continue
-    if channels[i] not in channels[0].children:
-      channels[0].children.append(channels[i])
+  for i in range(1, len(gallery.channels)):
+    if gallery.channels[i].id in checked_channels: continue
+    if gallery.channels[i] not in gallery.channels[0].children:
+      gallery.channels[0].children.append(gallery.channels[i])
       # print("save new child")
-      channels[0].save()
-    if channels[i].parent != channels[0]:
-      channels[i].parent = channels[0]
+      gallery.channels[0].save()
+    if gallery.channels[i].parent != gallery.channels[0]:
+      gallery.channels[i].parent = gallery.channels[0]
       # print("save new parent")
-      channels[i].save()
-    checked_channels.add(channels[i].id)
+      gallery.channels[i].save()
+    checked_channels.add(gallery.channels[i].id)
 del checked_channels

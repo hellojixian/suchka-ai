@@ -17,7 +17,14 @@ class Model(Document):
   galleries = ListField(ReferenceField('Gallery', reverse_delete_rule=DO_NOTHING))
   tags = ListField(ReferenceField('ModelTag', reverse_delete_rule=DO_NOTHING))
   channels = ListField(ReferenceField('Channel', reverse_delete_rule=DO_NOTHING))
-
+  meta = {
+      'indexes': [
+          {'fields': ['name']},
+          {'fields': ['galleries']},
+          {'fields': ['channels']},
+          {'fields': ['tags']},
+      ]
+  }
 # tag object
 class TagModel(EmbeddedDocument):
   model = ReferenceField(Model, reverse_delete_rule=DO_NOTHING)
@@ -28,6 +35,14 @@ class Tag(Document):
   models = ListField(EmbeddedDocumentField('TagModel'))
   channels = ListField(ReferenceField('Channel', reverse_delete_rule=DO_NOTHING))
   galleries = ListField(ReferenceField('Gallery', reverse_delete_rule=DO_NOTHING))
+  meta = {
+      'indexes': [
+          {'fields': ['name']},
+          {'fields': ['models']},
+          {'fields': ['channels']},
+          {'fields': ['galleries']},
+      ]
+  }
 
 # channel object
 class ChannelModel(EmbeddedDocument):
@@ -48,6 +63,16 @@ class Channel(Document):
   galleries = ListField(ReferenceField('Gallery', reverse_delete_rule=DO_NOTHING))
   models = ListField(ReferenceField('ChannelModel', reverse_delete_rule=DO_NOTHING))
   tags = ListField(ReferenceField('ChannelTag', reverse_delete_rule=DO_NOTHING))
+  meta = {
+      'indexes': [
+          {'fields': ['name']},
+          {'fields': ['parent']},
+          {'fields': ['models']},
+          {'fields': ['children']},
+          {'fields': ['galleries']},
+          {'fields': ['tags']},
+      ]
+  }
 
 # the fundamental gallery object
 class Gallery(Document):
@@ -60,3 +85,11 @@ class Gallery(Document):
   models = ListField(ReferenceField(Model))
   path = StringField(required=True)
   is_solo = BooleanField(required=True)
+  meta = {
+        'indexes': [
+            {'fields': ['gid']},
+            {'fields': ['models']},
+            {'fields': ['channels']},
+            {'fields': ['tags']},
+        ]
+    }
