@@ -26,6 +26,9 @@ if not os.path.exists(cached_index_root): os.mkdir(cached_index_root)
 def convert_dict_to_galleries(key, data):
   return [{key: _key, 'galleries': list(galleries_ids), 'count': len(galleries_ids)} for _key, galleries_ids in data.items()]
 
+def convert_dict_to_galleries_count(key, data):
+  return [{key: _key, 'gallery_count': len(galleries_ids) } for _key, galleries_ids in data.items()]
+
 def get_human_readable_size(file_path):
     size_bytes = os.path.getsize(file_path)
     units = ["B", "KB", "MB", "GB", "TB"]
@@ -175,9 +178,9 @@ for tag_id, tag in tqdm.tqdm(cached_tags.items(), desc="Update tags bulk operati
   res = pydb.tag.update_one(
   filter = {"_id": tag_id},
   update = {"$set": {
-    "galleries": list(tag["galleries"]),
-    "channels": convert_dict_to_galleries("channel", tag["channels"]),
-    "models": convert_dict_to_galleries("model", tag["models"]),
+    "gallery_count": len(tag["galleries"]),
+    "channels": convert_dict_to_galleries_count("channel", tag["channels"]),
+    "models": convert_dict_to_galleries_count("model", tag["models"]),
   }})
   if res.matched_count != 1:
     print(res.raw_result)

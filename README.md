@@ -70,6 +70,7 @@ db.gallery.aggregate([ { $group: { _id: "$gid", count: { $sum: 1 } } }, { $match
 db.channel.aggregate([ { $group: { _id: "$name", count: { $sum: 1 } } }, { $match: { count: { $gt: 1 } } }]);
 db.model.aggregate([ { $group: { _id: "$name", count: { $sum: 1 } } }, { $match: { count: { $gt: 1 } } }]);
 db.tag.aggregate([ { $group: { _id: "$name", count: { $sum: 1 } } }, { $match: { count: { $gt: 1 } } }]);
+db.face.aggregate([ { $group: { _id: {$concat:["$name","$source"]}, count: { $sum: 1 } } }, { $match: { count: { $gt: 1 } } }]);
 
 // check data records for each collection
 db.getCollectionNames().forEach((collectionName) => {
