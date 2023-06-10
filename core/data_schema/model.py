@@ -17,11 +17,13 @@ class Model(Document):
   galleries = ListField(ReferenceField('Gallery', reverse_delete_rule=DO_NOTHING))
   tags = ListField(ReferenceField('ModelTag', reverse_delete_rule=DO_NOTHING))
   channels = ListField(ReferenceField('Channel', reverse_delete_rule=DO_NOTHING))
+  models = ListField(ReferenceField('Model', reverse_delete_rule=DO_NOTHING))
   meta = {
       'indexes': [
           {'fields': ['name']},
           {'fields': ['galleries']},
           {'fields': ['channels']},
+          {'fields': ['models']},
           {'fields': ['tags']},
       ]
   }

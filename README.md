@@ -77,3 +77,8 @@ db.getCollectionNames().forEach((collectionName) => {
   print(`Collection: ${collectionName}, Count: ${count}`);
 });
 ```
+
+```js
+// find the most popular tags
+db.tag.aggregate([{$project: {name: "$name" ,g_count: {$size: "$galleries"}}}, {$sort: {g_count:-1}}])
+```

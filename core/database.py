@@ -10,5 +10,5 @@ class Database:
     self.uri = os.getenv("MONGODB_URI")
     self.conn = connect(host=self.uri)
 
-  def get_coonection(self):
+  def get_connection(self):
     return self.conn
