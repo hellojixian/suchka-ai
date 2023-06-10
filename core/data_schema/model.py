@@ -7,7 +7,18 @@ class ModelFace(EmbeddedDocument):
 
 class ModelTag(EmbeddedDocument):
   tag = ReferenceField('Tag', reverse_delete_rule=DO_NOTHING)
-  count = IntField(required=True)
+  galleries = ListField(ReferenceField('Gallery', reverse_delete_rule=DO_NOTHING))
+  count = IntField()
+
+class ModelChannel(EmbeddedDocument):
+  channel = ReferenceField('Channel', reverse_delete_rule=DO_NOTHING)
+  galleries = ListField(ReferenceField('Gallery', reverse_delete_rule=DO_NOTHING))
+  count = IntField()
+
+class ModelModel(EmbeddedDocument):
+  model = ReferenceField('Model', reverse_delete_rule=DO_NOTHING)
+  galleries = ListField(ReferenceField('Gallery', reverse_delete_rule=DO_NOTHING))
+  count = IntField()
 
 class Model(Document):
   name = StringField(required=True)
@@ -16,32 +27,33 @@ class Model(Document):
   faces = ListField(EmbeddedDocumentField(ModelFace))
   galleries = ListField(ReferenceField('Gallery', reverse_delete_rule=DO_NOTHING))
   tags = ListField(ReferenceField('ModelTag', reverse_delete_rule=DO_NOTHING))
-  channels = ListField(ReferenceField('Channel', reverse_delete_rule=DO_NOTHING))
-  models = ListField(ReferenceField('Model', reverse_delete_rule=DO_NOTHING))
+  channels = ListField(ReferenceField('ModelChannel', reverse_delete_rule=DO_NOTHING))
+  models = ListField(ReferenceField('ModelModel', reverse_delete_rule=DO_NOTHING))
   meta = {
       'indexes': [
           {'fields': ['name']},
           {'fields': ['galleries']},
-          {'fields': ['channels']},
-          {'fields': ['models']},
-          {'fields': ['tags']},
       ]
   }
 # tag object
 class TagModel(EmbeddedDocument):
-  model = ReferenceField(Model, reverse_delete_rule=DO_NOTHING)
-  galleries = IntField(required=True)
+  model = ReferenceField('Model', reverse_delete_rule=DO_NOTHING)
+  galleries = ListField(ReferenceField('Gallery', reverse_delete_rule=DO_NOTHING))
+  count = IntField()
+
+class TagChannel(EmbeddedDocument):
+  channel = ReferenceField('Channel', reverse_delete_rule=DO_NOTHING)
+  galleries = ListField(ReferenceField('Gallery', reverse_delete_rule=DO_NOTHING))
+  count = IntField()
 
 class Tag(Document):
   name = StringField(required=True)
   models = ListField(EmbeddedDocumentField('TagModel'))
-  channels = ListField(ReferenceField('Channel', reverse_delete_rule=DO_NOTHING))
+  channels = ListField(ReferenceField('TagChannel', reverse_delete_rule=DO_NOTHING))
   galleries = ListField(ReferenceField('Gallery', reverse_delete_rule=DO_NOTHING))
   meta = {
       'indexes': [
           {'fields': ['name']},
-          {'fields': ['models']},
-          {'fields': ['channels']},
           {'fields': ['galleries']},
       ]
   }
@@ -49,30 +61,30 @@ class Tag(Document):
 # channel object
 class ChannelModel(EmbeddedDocument):
   model = ReferenceField(Model, reverse_delete_rule=DO_NOTHING)
-  galleries = IntField(required=True)
+  galleries = ListField(ReferenceField('Gallery', reverse_delete_rule=DO_NOTHING))
+  count = IntField()
 
 class ChanneTag(EmbeddedDocument):
   tag = ReferenceField(Tag, reverse_delete_rule=DO_NOTHING)
-  galleries = IntField(required=True)
+  galleries = ListField(ReferenceField('Gallery', reverse_delete_rule=DO_NOTHING))
+  count = IntField()
 
 class Channel(Document):
   name = StringField(required=True)
   logo = StringField()
   background_color = StringField()
   url = StringField()
+  galleries = ListField(ReferenceField('Gallery', reverse_delete_rule=DO_NOTHING))
   parent = ReferenceField('Channel', reverse_delete_rule=DO_NOTHING)
   children = ListField(ReferenceField('Channel', reverse_delete_rule=DO_NOTHING))
-  galleries = ListField(ReferenceField('Gallery', reverse_delete_rule=DO_NOTHING))
   models = ListField(ReferenceField('ChannelModel', reverse_delete_rule=DO_NOTHING))
   tags = ListField(ReferenceField('ChannelTag', reverse_delete_rule=DO_NOTHING))
   meta = {
       'indexes': [
           {'fields': ['name']},
           {'fields': ['parent']},
-          {'fields': ['models']},
           {'fields': ['children']},
           {'fields': ['galleries']},
-          {'fields': ['tags']},
       ]
   }
 
