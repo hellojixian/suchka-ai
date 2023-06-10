@@ -119,20 +119,20 @@ def get_human_readable_size(file_path):
     return f"{size:.2f} {units[unit_index]}"
 
 
-print('Saving cached channels data')
+print('Saving cached channels data', end=' ')
 with open(cached_channels_file, 'wb') as f:
   pickle.dump(cached_channels, f)
-print(f"cached_channels_file: {get_human_readable_size(cached_channels_file)}")
+print(f"\t size: {get_human_readable_size(cached_channels_file)}")
 
-print('Saving cached tags data')
+print('Saving cached tags data', end=' ')
 with open(cached_tags_file, 'wb') as f:
-  pickle.dump(cached_channels, f)
-print(f"cached_tags_file: {get_human_readable_size(cached_tags_file)}")
+  pickle.dump(cached_tags, f)
+print(f"\t size: {get_human_readable_size(cached_tags_file)}")
 
-print('Saving cached models data')
+print('Saving cached models data', end=' ')
 with open(cached_models_file, 'wb') as f:
-  pickle.dump(cached_channels, f)
-print(f"cached_channels_file: {get_human_readable_size(cached_channels_file)}")
+  pickle.dump(cached_models, f)
+print(f"\t size: {get_human_readable_size(cached_channels_file)}")
 
 # Get the pymongo connection from mongoengine connection
 from pymongo import MongoClient
@@ -143,7 +143,7 @@ for channel_id, channel in tqdm.tqdm(cached_channels.items(), desc="Update chann
   pydb.model.update_one(
   {"filter": {"_id": channel_id}},
   {"$set": {
-    "galleries": list(channel["galleries"]),
+    # "galleries": list(channel["galleries"]),
     "tags": convert_dict_to_galleries("tag", channel["tags"]),
     "models": convert_dict_to_galleries("model", channel["models"]),
   }})
@@ -153,7 +153,7 @@ for tag_id, tag in tqdm.tqdm(cached_tags.items(), desc="Update tags bulk operati
   pydb.tag.update_one(
   {"filter": {"_id": tag_id}},
   {"$set": {
-    "galleries": list(tag["galleries"]),
+    # "galleries": list(tag["galleries"]),
     "channels": convert_dict_to_galleries("channel", tag["channels"]),
     "models": convert_dict_to_galleries("model", tag["models"]),
   }})
@@ -164,7 +164,7 @@ for model_id, model in tqdm.tqdm(cached_models.items(), desc="Update models bulk
   pydb.tag.update_one(
   {"filter": {"_id": model_id}},
   {"$set": {
-    "galleries": list(model["galleries"]),
+    # "galleries": list(model["galleries"]),
     "channels": convert_dict_to_galleries("channel", model["channels"]),
     "tags": convert_dict_to_galleries("tag", model["tags"]),
     "models": convert_dict_to_galleries("model", model["models"]),
