@@ -21,3 +21,4 @@ models = model.Model.objects().all()
 for model_obj in tqdm.tqdm(models, desc="Update Models => Galleries index"):
   model_obj.galleries = model.Gallery.objects(models=model_obj.id)
   model_obj.save()
+  del model_obj.galleries

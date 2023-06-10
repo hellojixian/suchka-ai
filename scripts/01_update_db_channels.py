@@ -17,7 +17,6 @@ import core.data_schema.model as model
 from core.database import Database
 db = Database()
 
-
 checked_channels = set()
 galleries = model.Gallery.objects(__raw__={  '$expr': { '$gte': [{ '$size': '$channels' }, 2]} })
 for gallery in tqdm.tqdm(galleries, desc="Update Channel's parent index"):
@@ -32,4 +31,6 @@ for gallery in tqdm.tqdm(galleries, desc="Update Channel's parent index"):
       # print("save new parent")
       gallery.channels[i].save()
     checked_channels.add(gallery.channels[i].id)
+  for c in gallery.channels: del c
+  del gallery.channels
 del checked_channels

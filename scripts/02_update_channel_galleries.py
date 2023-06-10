@@ -21,3 +21,4 @@ channels = model.Channel.objects().all()
 for channel in tqdm.tqdm(channels, desc="Update Channel => Galleries index"):
   channel.galleries = model.Gallery.objects(channels=channel.id)
   channel.save()
+  del channel.galleries

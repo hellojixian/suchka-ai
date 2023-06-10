@@ -17,12 +17,9 @@ import core.data_schema.model as model
 from core.database import Database
 db = Database()
 
-# models = model.Model.objects().all()
-# for model_obj in tqdm.tqdm(models, desc="Update Models => Galleries index"):
-#   model_obj.galleries = model.Gallery.objects(models=model_obj.id)
-#   model_obj.save()
-
 tags = model.Tag.objects().all()
 for tag in tqdm.tqdm(tags, desc="Update Tags => Galleries index"):
   tag.galleries = model.Gallery.objects(tags=tag.id)
+  # print(len(tag.galleries))
   tag.save()
+  del tag.galleries
