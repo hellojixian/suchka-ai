@@ -83,3 +83,11 @@ db.getCollectionNames().forEach((collectionName) => {
 // find the most popular tags
 db.tag.aggregate([{$project: {name: "$name" ,g_count: {$size: "$galleries"}}}, {$sort: {g_count:-1}}])
 ```
+
+### backup database
+```sh
+docker exec -it mongo mongodump -d suchka-ai  -o /data/backup
+docker cp mongo:/data/backup/suchka-ai /backup/suchka-ai/db
+docker exec -it mongo rm -rf /data/backup/suchka-ai
+(cd /backup/suchka-ai/db; tar czvf suchka-ai.tar.gz  ./suchka-ai; rm -rf ./suchka-ai)
+```

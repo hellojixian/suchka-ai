@@ -1,4 +1,6 @@
 import os
+import numpy as np
+from enum import Enum
 from mongoengine import *
 from dotenv import load_dotenv
 load_dotenv()
@@ -8,7 +10,7 @@ class Face(Document):
   name = StringField(required=True)
   filename = StringField(required=True)
   source = StringField(required=True)
-  embedding = ListField(FloatField())
+  embedding_bin = BinaryField()
   model = ReferenceField('Model')
   gallery = ReferenceField('Gallery')
   meta = {
@@ -21,6 +23,10 @@ class Face(Document):
   @property
   def path(self):
     return  f"{os.getenv('PROJECT_FACEDB_PATH')}/{self.name}/{self.filename}"
+
+  @property
+  def embedding(self):
+    return np.frombuffer(self.embedding_bin, dtype=np.float32)
 
 class ModelTag(EmbeddedDocument):
   tag = ReferenceField('Tag')
@@ -37,9 +43,15 @@ class ModelModel(EmbeddedDocument):
   galleries = ListField(ReferenceField('Gallery'))
   count = IntField()
 
+class GenderEnum(Enum):
+    MALE = 'male'
+    FEMALE = 'female'
+    SHEMALE = 'shemale'
+
 class Model(Document):
   name = StringField(required=True)
-  gender = StringField()
+  gender = EnumField(GenderEnum)
+  facial_gender = EnumField(GenderEnum)
   race = StringField()
   faces = ListField(ReferenceField('Face'))
   galleries = ListField(ReferenceField('Gallery'))
@@ -49,6 +61,8 @@ class Model(Document):
   meta = {
       'indexes': [
           {'fields': ['name']},
+          {'fields': ['gender']},
+          {'fields': ['facial_gender']},
           {'fields': ['galleries']},
       ]
   }
