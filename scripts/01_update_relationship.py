@@ -14,7 +14,7 @@ load_dotenv()
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(project_root)
 
-from core.data_model import Model
+from core.data_model import model
 from core.database import Database
 db = Database()
 
