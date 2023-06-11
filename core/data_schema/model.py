@@ -1,4 +1,7 @@
+import os
 from mongoengine import *
+from dotenv import load_dotenv
+load_dotenv()
 
 # model object
 class Face(Document):
@@ -15,6 +18,9 @@ class Face(Document):
           {'fields': ['gallery']},
       ]
   }
+  @property
+  def path(self):
+    return  f"{os.getenv('PROJECT_FACEDB_PATH')}/{self.name}/{self.filename}"
 
 class ModelTag(EmbeddedDocument):
   tag = ReferenceField('Tag')
