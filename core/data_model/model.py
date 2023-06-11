@@ -26,9 +26,10 @@ class GenderEnum(Enum):
 class Model(Document):
   name = StringField(required=True)
   gender = EnumField(GenderEnum)
-  facial_gender = EnumField(GenderEnum)
   race = StringField()
   faces = ListField(ReferenceField('Face'))
+  face_extracted = BooleanField()
+  facial_gender = EnumField(GenderEnum)
   galleries = ListField(ReferenceField('Gallery'))
   tags = ListField(EmbeddedDocumentField('ModelTag'))
   channels = ListField(EmbeddedDocumentField('ModelChannel'))
