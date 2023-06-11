@@ -24,7 +24,7 @@ from deepface import DeepFace
 from dotenv import load_dotenv
 load_dotenv()
 
-import core.data_schema.model as model
+import core.data_model as model
 from core.database import Database
 
 db = Database()

@@ -12,7 +12,7 @@ import shutil
 # sys.path.append(project_root)
 
 from sklearn.metrics.pairwise import cosine_similarity
-import core.data_schema.model as model
+import core.data_model as model
 
 from deepface import DeepFace
 from dotenv import load_dotenv

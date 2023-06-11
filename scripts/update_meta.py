@@ -27,9 +27,12 @@ for gid in folders:
       exif_dict["0th"][piexif.ImageIFD.Artist] = data['models'].encode(encoding='utf-8')
       exif_dict["0th"][piexif.ImageIFD.Copyright] = data['copyright'].encode(encoding='utf-8')
       exif_dict['thumbnail'] = None if exif_dict['thumbnail'] == b'' else exif_dict['thumbnail']
+      exif_dict['Exif'][41728] = b''
       exif_bytes = piexif.dump(exif_dict)
-    finally:
       image.save(full_path, exif=exif_bytes)
+      image.close()
+    except:
+
       image.close()
       del image
   print(f"Updated {gid}")

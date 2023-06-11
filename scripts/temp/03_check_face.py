@@ -14,17 +14,17 @@ load_dotenv()
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
 sys.path.append(project_root)
 
-import core.data_schema.model as model
+import core.data_model as model
 from core.database import Database
 db = Database()
 
 face_root = os.getenv("PROJECT_FACEDB_PATH")
 
-# faces = model.Face.objects()
-# for _ in tqdm.tqdm(range(faces.count()), desc=f'Scan face folders'):
-#   face = next(faces)
-#   if not os.path.exists(face.path):
-#     print(face.path)
+faces = model.Face.objects()
+for _ in tqdm.tqdm(range(faces.count()), desc=f'Scan face folders'):
+  face = next(faces)
+  if not os.path.exists(face.path):
+    print(face.path)
 
 
 

@@ -16,7 +16,7 @@ import torch
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
 sys.path.append(project_root)
 
-import core.data_schema.model as model
+import core.data_model as model
 from core.database import Database
 db = Database()
 
@@ -25,7 +25,8 @@ face_root = os.getenv("PROJECT_FACEDB_PATH")
 faces = model.Face.objects()
 for _ in tqdm.tqdm(range(faces.count()), desc=f'Scan face folders'):
   face = next(faces)
-  print(face.embedding_bf16.shape)
+  # print(face.embedding_bf16.shape)
+  continue
   # embedding_np32 = np.frombuffer(face.embedding_bin, dtype=np.float32)
   # embedding_fp32 = torch.tensor(embedding_np32, dtype=torch.float32)
   # embedding_bf16 = embedding_fp32.bfloat16()

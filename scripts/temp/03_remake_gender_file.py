@@ -16,7 +16,7 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')
 sys.path.append(project_root)
 
 from deepface import DeepFace
-import core.data_schema.model as model
+import core.data_model as model
 from core.database import Database
 db = Database()
 
