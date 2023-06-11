@@ -25,15 +25,22 @@ face_root = os.getenv("PROJECT_FACEDB_PATH")
 faces = model.Face.objects()
 for _ in tqdm.tqdm(range(faces.count()), desc=f'Scan face folders'):
   face = next(faces)
-  embedding_fp32 = np.frombuffer(face.embedding_bin, dtype=np.float32)
-  print(embedding_fp32.shape)
-  # embedding_fp32 = embedding_fp64.astype(np.float32)
-  # print(embedding_fp32.shape, embedding_fp64.shape)
+  print(face.embedding_bf16.shape)
+  # embedding_np32 = np.frombuffer(face.embedding_bin, dtype=np.float32)
+  # embedding_fp32 = torch.tensor(embedding_np32, dtype=torch.float32)
+  # embedding_bf16 = embedding_fp32.bfloat16()
 
-  # print(np.sum(embedding_fp64 - embedding_fp32))
-  embedding_bin = embedding_fp32.tobytes()
-  print(len(embedding_bin))
-  break
+  # # print(embedding_fp32.shape, embedding_bf16.shape)
+  # diff = torch.sum(embedding_fp32 - embedding_bf16).detach().numpy()
+  # # print(diff)
+  # # embedding_fp32 = embedding_fp64.astype(np.float32)
+  # # print(embedding_fp32.shape, embedding_fp64.shape)
+
+  # # print(np.sum(embedding_fp64 - embedding_fp32))
+  # torch_bin = pickle.dumps(embedding_bf16)
+  # embedding_bin = embedding_np32.tobytes()
+  # print(diff, len(embedding_bin), len(torch_bin))
+  # # break
   # print(type(embedding_list), type(embedding_arr), type(embedding_bin), embedding_arr.shape)
   # face.embedding_bin = embedding_bin
   # face.save()
