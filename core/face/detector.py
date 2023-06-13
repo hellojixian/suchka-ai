@@ -1,12 +1,10 @@
 import os
 import cv2
-import gc
+import torch
 import numpy as np
-from pathlib import Path
-from PIL import Image
 from facenet_pytorch import MTCNN
-# from deepface.basemodels import VGGFace
-# from deepface.extendedmodels import Gender
+from core.face.vggface import VGGFace
+from core.face.gender import Gender
 from core.face.functions import alignment_procedure
 
 confidence_threshold = 0.95
@@ -17,16 +15,18 @@ def load_image(img):
       raise ValueError(f"Confirm that {img} exists")
   return cv2.imread(img)
 
-def detect_face(img, gpu_id = 0):
-  global face_detector
-
+def detect_face(img, face_detector):
   resp = []
   detected_face = None
   img_region = [0, 0, img.shape[1], img.shape[0]]
 
   img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # mtcnn expects RGB but OpenCV read BGR
 
-  boxes, probs, points = face_detector.detect(img_rgb, landmarks=True)
+  with torch.no_grad():
+    boxes, probs, points = face_detector.detect(img_rgb, landmarks=True)
+
+  if boxes is None: return resp
+
   detections = []
   for i, (box, probs, point) in enumerate(zip(boxes, probs, points)):
     detections.append({"box": box, "confidence": probs, "keypoints": {"left_eye": point[0], "right_eye": point[1]}})
@@ -77,16 +77,15 @@ def detect_face(img, gpu_id = 0):
       keypoints = detection["keypoints"]
       left_eye = keypoints["left_eye"]
       right_eye = keypoints["right_eye"]
-      detected_face = alignment_procedure(detected_face, left_eye, right_eye)
+      try:
+        detected_face = alignment_procedure(detected_face, left_eye, right_eye)
+      except:
+        pass
 
       resp.append((detected_face, img_region, confidence, cropped))
   return resp
 
-def extract_faces(
-    img,
-    target_size=(224, 224),
-    gpu_id = 0,
-):
+def extract_faces(img, target_size=(224, 224), face_detector=None):
   # this is going to store a list of img itself (numpy), it region and confidence
   extracted_faces = []
 
@@ -94,7 +93,7 @@ def extract_faces(
   if type(img).__module__ != np.__name__: img = load_image(img)
 
   img_region = [0, 0, img.shape[1], img.shape[0]]
-  face_objs = detect_face(img, gpu_id=gpu_id)
+  face_objs = detect_face(img, face_detector)
 
   if len(face_objs) == 0:
       face_objs = [(img, img_region, 0, img)]
@@ -149,14 +148,18 @@ gender_model = None
 embedding_model = None
 face_detector = None
 
-def process_image(img, gpu_id=0):
-  global face_detector, gender_model, embedding_model
-  if not face_detector: face_detector = MTCNN(factor=0.5, min_face_size=60, keep_all=True, device='cpu')
-  # if not gender_model: gender_model = Gender.loadModel()
-  # if not embedding_model: embedding_model = VGGFace.loadModel()
+def init_models(device='cpu'):
+  face_detector   = MTCNN(factor=0.5, min_face_size=64, keep_all=True, device=device)
+  gender_model    = Gender(device=device)
+  embedding_model = VGGFace(device=device)
+  return [face_detector, gender_model, embedding_model]
+
+
+def process_image(img, models = None):
+  [face_detector, gender_model, embedding_model] = models if models is not None else init_models()
 
   # use mtcnn to detect faces
-  img_objs = extract_faces(img=img, gpu_id=gpu_id)
+  img_objs = extract_faces(img=img, face_detector=face_detector)
 
   resp_objs = []
   for img, region, confidence, cropped in img_objs:
@@ -165,8 +168,12 @@ def process_image(img, gpu_id=0):
     # discard low confidence
     if confidence <= confidence_threshold: continue
 
-    # gender = gender_model.predict(img, verbose=0)[0, :]
-    # embedding = embedding_model.predict(img, verbose=0)[0].tolist()
+    with torch.no_grad():
+      torch_img = torch.from_numpy(cropped.astype(np.float32).transpose(2, 0, 1)).to(embedding_model.device)
+      torch_img /= 255
+      features = embedding_model.features(torch_img)
+      embedding = embedding_model.embedding(features).cpu().detach().numpy().tolist()
+      gender_probs = gender_model(features).cpu().detach().numpy().tolist()
 
     # discard expanded dimension
     if len(img.shape) == 4:
@@ -175,13 +182,9 @@ def process_image(img, gpu_id=0):
     resp_obj["face"] = img[:, :, ::-1]
     resp_obj["facial_area"] = region
     resp_obj["confidence"] = confidence
-    # resp_obj["embedding"] = embedding
-    resp_obj["gender"] = {}
+    resp_obj["embedding"] = embedding
     resp_obj["cropped_face"] = cropped
-    # for i, gender_label in enumerate(Gender.labels):
-        # gender_prediction = 100 * gender[i]
-        # resp_obj["gender"][gender_label] = gender_prediction
-
+    resp_obj["gender"] = {gender_label: gender_probs[i] for i, gender_label in enumerate(Gender.labels)}
     resp_objs.append(resp_obj)
 
   return resp_objs

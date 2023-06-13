@@ -2,12 +2,13 @@ import torch
 import torch.nn as nn
 
 import os
-project_root = os.path.abspath(os.path.join(os.path.dirname('../')))
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
 weight_file = f'{project_root}/pretrained/gender.pth'
-labels = ["female", "male"]
 
 class Gender(nn.Module):
-  def __init__(self):
+  labels = ["female", "male"]
+
+  def __init__(self, device = None):
     super(Gender, self).__init__()
     in_channels = 512
     self.classifier = nn.Sequential(
@@ -17,11 +18,15 @@ class Gender(nn.Module):
       nn.Conv2d(4096, 4096, kernel_size=1),
       nn.ReLU(inplace=True),
       nn.Dropout(0.5),
-      nn.Conv2d(4096, len(labels), kernel_size=1),
+      nn.Conv2d(4096, len(self.labels), kernel_size=1),
     )
     self.flatten = nn.Flatten(start_dim=0)
     self.softmax = nn.Softmax(dim=0)
     self.load_weights()
+    self.device = torch.device('cpu')
+    if device is not None:
+        self.device = device
+        self.to(device)
 
   def forward(self, x):
     x = self.classifier(x)
@@ -30,9 +35,8 @@ class Gender(nn.Module):
     return x
 
   def predict(self, x):
-    x = self.forward(x)
     x = x.argmax()
-    return labels[x]
+    return self.labels[x]
 
   def load_weights(self, path = None):
     if path is None: path = weight_file

@@ -2,11 +2,12 @@ import torch
 import torch.nn as nn
 
 import os
-project_root = os.path.abspath(os.path.join(os.path.dirname('../')))
+
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
 weight_file = f'{project_root}/pretrained/vggface.pth'
 
 class VGGFace(nn.Module):
-  def __init__(self):
+  def __init__(self, device = None):
     super(VGGFace, self).__init__()
 
     self.features = nn.Sequential(
@@ -61,6 +62,11 @@ class VGGFace(nn.Module):
     self.softmax = nn.Softmax(dim=1)
     self.load_weights()
 
+    self.device = torch.device('cpu')
+    if device is not None:
+      self.device = device
+      self.to(device)
+
   def forward(self, x):
     x = self.features(x)
     x = self.classifier(x)
@@ -68,9 +74,9 @@ class VGGFace(nn.Module):
     return x
 
   def embedding(self, x):
-    x = self.features(x)
     x = self.classifier(x)
     x = self.flatten(x)
+    x = x.reshape(-1)
     return x
 
   def load_weights(self, path = None):
