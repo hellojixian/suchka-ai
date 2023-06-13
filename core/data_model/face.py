@@ -1,5 +1,4 @@
 import os
-import torch
 import numpy as np
 from mongoengine import *
 from dotenv import load_dotenv
@@ -27,7 +26,3 @@ class Face(Document):
   @property
   def embedding(self):
     return np.frombuffer(self.embedding_bin, dtype=np.float32)
-
-  @property
-  def embedding_bf16(self):
-    return torch.tensor(np.frombuffer(self.embedding_bin, dtype=np.float32), dtype=torch.float32).bfloat16()
