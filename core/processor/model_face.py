@@ -89,7 +89,7 @@ def get_facial_gender(faces:list):
 def save_model_faces(model:Model, common_faces:list, pbar=None, pbar_prefix:str=None):
   model_folder = os.path.join(facedb_root, model.name)
   if not os.path.exists(model_folder): os.makedirs(model_folder)
-  if pbar: pbar.set_description(f'{pbar_prefix} : Savining faces'.ljust(35))
+  if pbar: pbar.set_description(f'{pbar_prefix} : Savining'.ljust(35))
   if pbar: pbar.reset(total=len(common_faces))
 
   for face_data in common_faces:
