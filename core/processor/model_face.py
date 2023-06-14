@@ -86,10 +86,10 @@ def get_facial_gender(faces:list):
   gender_id = np.array([list(face['gender'].values()) for face in faces], dtype=float).mean(axis=0).argmax()
   return Gender.labels[gender_id]
 
-def save_model_faces(model:Model, common_faces:list, pbar=None):
+def save_model_faces(model:Model, common_faces:list, pbar=None, pbar_prefix:str=None):
   model_folder = os.path.join(facedb_root, model.name)
   if not os.path.exists(model_folder): os.makedirs(model_folder)
-  if pbar: pbar.set_description(f'Savining faces'.ljust(35))
+  if pbar: pbar.set_description(f'{pbar_prefix} : Savining faces'.ljust(35))
   if pbar: pbar.reset(total=len(common_faces))
 
   for face_data in common_faces:
@@ -130,5 +130,5 @@ def process_model_faces(model:Model, pbar=None):
   if grouped_faces is None: return
 
   common_faces = find_common_faces(grouped_faces, face_dataset)
-  save_model_faces(model, common_faces, pbar=pbar)
+  save_model_faces(model, common_faces, pbar=pbar, pbar_prefix=f'{model.name.rjust(20)}')
   return

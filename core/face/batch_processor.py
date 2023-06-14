@@ -6,6 +6,8 @@ import concurrent.futures
 import torch
 from .detector import process_image, init_models
 
+PROCESS_IMAGE_TIMEOUT = 5
+
 def load_images(images, pbar=None, pbar_prefix=""):
   images_dict = {}
   if pbar is not None:
@@ -72,6 +74,9 @@ def process_batch(images, device='cpu', threads=2, pbar=None, pbar_prefix=""):
       futures.append(future)
 
     for future in concurrent.futures.as_completed(futures):
-      result = future.result()
-      if result[1] is not None: results[result[0]] = result[1]
+      try:
+        result = future.result(timeout=PROCESS_IMAGE_TIMEOUT)
+        if result[1] is not None: results[result[0]] = result[1]
+      except Exception as e:
+        pass
   return results
