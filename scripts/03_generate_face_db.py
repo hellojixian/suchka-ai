@@ -24,7 +24,7 @@ from pymongo import MongoClient
 pymongo_client = MongoClient(os.environ.get('MONGODB_URI'))
 pydb = pymongo_client.get_database()
 
-num_processes = 6
+num_processes = 8
 
 def signal_handler(signal, frame):
   print("Ctrl+C pressed. Exiting gracefully...")
