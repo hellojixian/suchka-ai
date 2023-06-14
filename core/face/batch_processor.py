@@ -43,14 +43,18 @@ def process_batch(images, device='cpu', threads=2, pbar=None, pbar_prefix=""):
 
   """
   # load images into memory
-  images = load_images(images=images, pbar=pbar, pbar_prefix=pbar_prefix)
 
   global processor_models
   if processor_models is None:
     processor_models = []
+    if pbar: pbar.set_description(f'{pbar_prefix} : Initializing'.ljust(35))
+    if pbar: pbar.reset(total=threads)
     for i in range(threads):
       device_id = f'cuda:{i % torch.cuda.device_count()}' if torch.cuda.is_available() and device == 'gpu' else 'cpu'
       processor_models.append(init_models(device=device_id))
+      pbar.update(1)
+
+  images = load_images(images=images, pbar=pbar, pbar_prefix=pbar_prefix)
 
   results = dict()
   with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as executor:

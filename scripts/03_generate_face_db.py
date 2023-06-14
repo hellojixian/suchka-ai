@@ -60,7 +60,7 @@ if __name__ == '__main__':
   for i in range(num_processes):
     sender = manager.Queue()
     reciver = manager.Queue()
-    pbar = tqdm.tqdm(desc=f'Worker {i}')
+    pbar = tqdm.tqdm(desc=f'Worker {i}').reset()
     worker = mp.Process(target=model_processor, args=(sender,reciver,pbar,))
     worker.start()
     workers[worker.pid] = (worker, sender, reciver, pbar,)

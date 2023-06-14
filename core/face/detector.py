@@ -169,8 +169,11 @@ def process_image(img, models = None):
     if confidence <= confidence_threshold: continue
 
     with torch.no_grad():
-      torch_img = torch.from_numpy(cropped.astype(np.float32).transpose(2, 0, 1)).to(embedding_model.device)
-      torch_img /= 255
+      # use cropeed face to extract features
+      # torch_img = torch.from_numpy(cropped.astype(np.float32).transpose(2, 0, 1)).to(embedding_model.device) / 255
+
+      # use alighed face to extract features
+      torch_img = torch.from_numpy(np.squeeze(img).transpose(2, 0, 1)).to(embedding_model.device)
       features = embedding_model.features(torch_img)
       embedding = embedding_model.embedding(features).cpu().detach().numpy().tolist()
       gender_probs = gender_model(features).cpu().detach().numpy().tolist()
