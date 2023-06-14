@@ -13,10 +13,11 @@ def load_images(images, pbar=None, pbar_prefix=""):
     pbar.reset(total=len(images))
 
   for image in images:
-    try:
+    with open(image, 'rb') as f:
+      check_chars = f.read()[-2:]
+    if check_chars == b'\xff\xd9':
       images_dict[image] = cv2.imread(image)
-    except Exception as e:
-      print(f'error when load img: {image}')
+
     if pbar: pbar.update(1)
   return images_dict
 

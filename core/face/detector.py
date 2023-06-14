@@ -171,6 +171,7 @@ def process_image(img, models = None, return_fields=None):
   img_objs = extract_faces(img=img, face_detector=face_detector)
 
   resp_objs = []
+  if img_objs is None or len(img_objs) == 0: return resp_objs
   for img, region, confidence, cropped in img_objs:
     resp_obj = {}
 
