@@ -24,7 +24,7 @@ from pymongo import MongoClient
 pymongo_client = MongoClient(os.environ.get('MONGODB_URI'))
 pydb = pymongo_client.get_database()
 
-num_processes = 8
+num_processes = 6
 
 def signal_handler(signal, frame):
   print("Ctrl+C pressed. Exiting gracefully...")
@@ -40,12 +40,14 @@ def model_processor(sender, receiver, pbar):
       model_id = queue_item[1]
       try:
         model = Model.objects(id=model_id).first()
-        process_model_faces(model=model, pbar=pbar)
+        should_process = True
+        if model.face_extracted == True: should_process = False
+        if ' ' in model.name.strip(): should_process = False
+        if should_process: process_model_faces(model=model, pbar=pbar)
         sender.put(['FINISHED', model_id])
       except Exception as e:
         print(f"Error {e}")
         traceback.print_exc()
-
 
 if __name__ == '__main__':
   # Register the signal handler for SIGINT
@@ -72,10 +74,10 @@ if __name__ == '__main__':
   def next_model(collection, pbar):
     """Get next model with face not extracted"""
     model = next(collection)
-    while ('faces_extracted' in model.keys() and model['faces_extracted'] == True) \
-      or (' ' not in model['name'].strip()):
-      model = next(collection)
-      pbar.update(1)
+    # while ('face_extracted' in model.keys() and model['face_extracted'] == True) \
+    #   or (' ' not in model['name'].strip()):
+    #   model = next(collection)
+    #   pbar.update(1)
     return model
 
   with tqdm.tqdm(range(pydb.model.count_documents({})), desc=f'Process model faces') as pbar:
