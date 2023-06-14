@@ -10,6 +10,7 @@ from core.face.functions import alignment_procedure
 confidence_threshold = 0.95
 gender_threshold = 0.95
 cropped_face_size = (224, 224)
+min_face_size = 64
 
 def load_image(img):
   if os.path.isfile(img) is not True:
@@ -47,6 +48,9 @@ def detect_face(img, face_detector):
         edge_length = h
         x_offset =  (h - w)/ 2
         y_offset = 0
+
+      # Don't process small faces
+      if edge_length <= min_face_size: continue
 
       crop_x = x - x_offset
       crop_w = crop_x + edge_length
@@ -108,8 +112,11 @@ def extract_faces(img, target_size=(224, 224), face_detector=None):
         factor_1 = target_size[1] / current_img.shape[1]
         factor = min(factor_0, factor_1)
 
-        dsize = (int(current_img.shape[1] * factor), int(current_img.shape[0] * factor))
-        current_img = cv2.resize(current_img, dsize)
+        try:
+          dsize = (int(current_img.shape[1] * factor), int(current_img.shape[0] * factor))
+          current_img = cv2.resize(current_img, dsize)
+        except:
+          continue
 
         diff_0 = target_size[0] - current_img.shape[0]
         diff_1 = target_size[1] - current_img.shape[1]
@@ -151,7 +158,7 @@ embedding_model = None
 face_detector = None
 
 def init_models(device='cpu'):
-  face_detector   = MTCNN(factor=0.5, min_face_size=64, keep_all=True, device=device)
+  face_detector   = MTCNN(factor=0.5, min_face_size=min_face_size, keep_all=True, device=device)
   gender_model    = Gender(device=device)
   embedding_model = VGGFace(device=device)
   return [face_detector, gender_model, embedding_model]

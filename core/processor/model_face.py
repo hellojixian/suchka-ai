@@ -76,6 +76,7 @@ def find_common_faces(grouped_faces:dict, face_dataset:dict):
       group_galleries[group_id].add(face_dataset[face_id]['gallery_id'])
   # find the group with the most galleries
   max_group_id = max(group_galleries, key=lambda x: len(group_galleries[x]), default=None)
+  if max_group_id is None: return []
   common_face_ids = grouped_faces[max_group_id].keys()
   common_faces = [face_dataset[face_id] for face_id in common_face_ids]
   return common_faces
@@ -90,16 +91,18 @@ def save_model_faces(model:Model, common_faces:list):
   if not os.path.exists(model_folder): os.makedirs(model_folder)
   for face_data in common_faces:
     try:
+      filename = os.path.basename(face_data['image_path'])
+      image_path = os.path.join(model_folder, filename)
+      cv2.imwrite(image_path, face_data['cropped_face'])
       face = Face(
         name=model.name,
-        filename=os.path.basename(face_data['image_path']),
+        filename=filename,
         source=face_data['image_path'].replace(storage_root, ''),
         embedding_bin=np.array(face_data['embedding']).tobytes(),
         gallery=face_data['gallery_id'],
         model=model.id,
       )
       face.save()
-      cv2.imwrite(face.path, face_data['cropped_face'])
       model.faces.append(face)
     except NotUniqueError as e: pass
     except Exception as e:
