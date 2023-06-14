@@ -13,7 +13,8 @@ import signal
 from dotenv import load_dotenv
 load_dotenv()
 
-from core.data_model import Model, Face, Gallery
+from core.data_model import Model
+from core.processor.model_face import process_model_faces
 from core.database import Database
 db = Database()
 
@@ -23,9 +24,7 @@ from pymongo import MongoClient
 pymongo_client = MongoClient(os.environ.get('MONGODB_URI'))
 pydb = pymongo_client.get_database()
 
-project_folder = os.getenv("PROJECT_STORAGE_PATH")
-faces_dir = os.getenv("PROJECT_FACEDB_PATH")
-
+num_processes = 6
 
 def signal_handler(signal, frame):
   print("Ctrl+C pressed. Exiting gracefully...")
@@ -33,62 +32,63 @@ def signal_handler(signal, frame):
   manager.shutdown()
   sys.exit()
 
-def face_prcoessor(queue):
-  """ face processor should be a standalone process,
-  coomunicate with other child process via unix socket """
-  try:
-    print("face_prcoessor queue:", queue)
-    while True:
-      if not queue.empty():
-        data = queue.get()
-        print(f"face_prcoessor: {data}  {os.getpid()}")
-      # time.sleep(1)
-  except Exception as e:
-    print(f"Error {e}")
-    traceback.print_exc()
-  return
+def model_processor(sender, receiver, pbar):
+  while True:
+    if receiver.empty(): continue
+    queue_item = receiver.get()
+    if queue_item[0] == 'MODEL_ID':
+      model_id = queue_item[1]
+      try:
+        model = Model.objects(id=model_id).first()
+        process_model_faces(model=model, pbar=pbar)
+        sender.put(['FINISHED', model_id])
+      except Exception as e:
+        print(f"Error {e}")
+        traceback.print_exc()
 
-def process_model(model_id, queue):
-  try:
-    print("process_model process ID:", os.getpid())
-    queue.put(f'get face for model {model_id}')
-
-    model = Model.objects(id=model_id).first()
-    print(f"Checking {model['name']} ")
-  except Exception as e:
-    print(f"Error {e}")
-    traceback.print_exc()
-  return
 
 if __name__ == '__main__':
-  num_processes = 2
   # Register the signal handler for SIGINT
   signal.signal(signal.SIGINT, signal_handler)
 
   # Create face process in a dedicated process
   manager = mp.Manager()
-  queue = manager.Queue()
-
   globals()['manager'] = manager
-  face_process = mp.Process(target=face_prcoessor, args=(queue,))
-  face_process.start()
 
-  # Create a multiprocessing Pool
-  pool = manager.Pool(processes=num_processes)
+  workers = {}
+  # Create a worker process
+  for i in range(num_processes):
+    sender = manager.Queue()
+    reciver = manager.Queue()
+    pbar = tqdm.tqdm(desc=f'Worker {i}')
+    worker = mp.Process(target=model_processor, args=(sender,reciver,pbar,))
+    worker.start()
+    workers[worker.pid] = (worker, sender, reciver, pbar,)
+    pbar.set_description(f'Worker {i} (PID: {worker.pid})')
 
   results = []
   # using pymongo for faster query
   model_collection = pydb.model.find({}).sort('galleries.size', 1)
-  for _ in tqdm.tqdm(range(pydb.model.count_documents({})), desc=f'Check face folders'):
-    model_mongo = next(model_collection)
-    if 'face_extracted' in model_mongo.keys() and model_mongo['face_extracted']: continue
-    model_id = model_mongo['_id']
-    print(f"main process id: {os.getpid()}")
-    result = pool.apply_async(process_model, (model_id, queue,))
-    results.append(result)
+  def next_model(collection, pbar):
+    """Get next model with face not extracted"""
+    model = next(collection)
+    while ('faces_extracted' in model.keys() and model['faces_extracted'] == True) \
+      or (' ' not in model['name'].strip()):
+      model = next(collection)
+      pbar.update(1)
+    return model
 
-  # Wait for all tasks to complete and collect the results
-  final_results = [result.get() for result in results]
-  # Close the Pool to release resources
-  pool.close()
-  pool.join()
+  with tqdm.tqdm(range(pydb.model.count_documents({})), desc=f'Process model faces') as pbar:
+    for pid, (worker, reciver, sender, _) in workers.items():
+      sender.put(['MODEL_ID', next_model(model_collection, pbar=pbar)['_id']])
+
+    while True:
+      for pid, (worker, reciver, sender, _) in workers.items():
+        if reciver.empty(): continue
+        queue_item = reciver.get()
+        if queue_item[0] == 'FINISHED':
+          pbar.update(1)
+          sender.put(['MODEL_ID', next_model(model_collection, pbar=pbar)['_id']])
+
+
+

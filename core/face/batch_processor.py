@@ -6,10 +6,15 @@ import concurrent.futures
 import torch
 from .detector import process_image, init_models
 
-def load_images(images, silent=False):
+def load_images(images, pbar=None, pbar_prefix=""):
   images_dict = {}
-  for image in tqdm.tqdm(images, desc=f'Load model images', disable=silent):
+  if pbar is not None:
+    pbar.set_description(f'{pbar_prefix} : Loading'.ljust(35))
+    pbar.reset(total=len(images))
+
+  for image in images:
     images_dict[image] = cv2.imread(image)
+    if pbar: pbar.update(1)
   return images_dict
 
 def process_image_worker(img, models, pbar=None):
@@ -22,7 +27,8 @@ def process_image_worker(img, models, pbar=None):
   if pbar: pbar.update(1)
   return (img, res)
 
-def process_batch(images, device='cpu', threads=2, silent=False):
+processor_models = None
+def process_batch(images, device='cpu', threads=2, pbar=None, pbar_prefix=""):
   """
   this module is used to process the batch of images
   using multi threads
@@ -37,26 +43,27 @@ def process_batch(images, device='cpu', threads=2, silent=False):
 
   """
   # load images into memory
-  images = load_images(images=images, silent=silent)
-  processor_models = []
+  images = load_images(images=images, pbar=pbar, pbar_prefix=pbar_prefix)
 
-  for i in range(threads):
-    device_id = f'cuda:{i % torch.cuda.device_count()}' if torch.cuda.is_available() and device == 'gpu' else 'cpu'
-    processor_models.append(init_models(device=device_id))
+  global processor_models
+  if processor_models is None:
+    processor_models = []
+    for i in range(threads):
+      device_id = f'cuda:{i % torch.cuda.device_count()}' if torch.cuda.is_available() and device == 'gpu' else 'cpu'
+      processor_models.append(init_models(device=device_id))
 
   results = dict()
   with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as executor:
     futures = []
-    with tqdm.tqdm(total=len(images), disable=silent) as pbar:
-      for i, image in enumerate(images):
-        models = processor_models[i % threads]
-        future = executor.submit(process_image_worker, image, models=models, pbar=pbar if not silent else None)
-        futures.append(future)
+    if pbar: pbar.set_description(f'{pbar_prefix} : Processing'.ljust(35))
+    if pbar: pbar.reset(total=len(images))
 
-      for future in concurrent.futures.as_completed(futures):
-        result = future.result()
-        if result[1] is not None: results[result[0]] = result[1]
+    for i, image in enumerate(images):
+      models = processor_models[i % threads]
+      future = executor.submit(process_image_worker, image, models=models, pbar=pbar if pbar is not None else None)
+      futures.append(future)
+
+    for future in concurrent.futures.as_completed(futures):
+      result = future.result()
+      if result[1] is not None: results[result[0]] = result[1]
   return results
-
-# def test(device='cpu'):
-#   init_models(device=device)
