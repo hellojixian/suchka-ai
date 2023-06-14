@@ -18,6 +18,6 @@ class Tag(Document):
   gallery_count = IntField()
   meta = {
       'indexes': [
-          {'fields': ['name']},
+          {'fields': ['name'], 'unique': True},
       ]
   }

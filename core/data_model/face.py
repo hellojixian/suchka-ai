@@ -17,6 +17,7 @@ class Face(Document):
           {'fields': ['name']},
           {'fields': ['model']},
           {'fields': ['gallery']},
+          {'fields': ['name', 'filename'], 'unique': True}
       ]
   }
   @property

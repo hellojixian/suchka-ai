@@ -20,7 +20,7 @@ for i in range(len(model.galleries)):
   # find all jpg files in the gallery_path
   images = [f'{gallery_path}/{f}' for f in os.listdir(gallery_path) if os.path.isfile(os.path.join(gallery_path, f)) and f.split('.')[-1].lower() == 'jpg']
   model_images += images
-pbar = tqdm.tqdm().reset()
+pbar = tqdm.tqdm(desc=f'Worker 0', total=0)
 results = process_batch(images=model_images, device='gpu', pbar=pbar, pbar_prefix=f'{model.name.rjust(20)}')
 # results = process_batch(images=model_images, device='cpu', threads=4, pbar=pbar, pbar_prefix=f'{model.name.rjust(20)}')
 

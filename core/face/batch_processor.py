@@ -18,14 +18,14 @@ def load_images(images, pbar=None, pbar_prefix=""):
   return images_dict
 
 def process_image_worker(img, models, pbar=None):
-  res = None
+  results = None
   try:
-    res = process_image(img, models)
+    results = process_image(img, models=models, return_fields=['gender', 'embedding', 'cropped_face'])
   except Exception as e:
     print(e)
     traceback.print_exc()
   if pbar: pbar.update(1)
-  return (img, res)
+  return (img, results)
 
 processor_models = None
 def process_batch(images, device='cpu', threads=2, pbar=None, pbar_prefix=""):
@@ -52,7 +52,7 @@ def process_batch(images, device='cpu', threads=2, pbar=None, pbar_prefix=""):
     for i in range(threads):
       device_id = f'cuda:{i % torch.cuda.device_count()}' if torch.cuda.is_available() and device == 'gpu' else 'cpu'
       processor_models.append(init_models(device=device_id))
-      pbar.update(1)
+      if pbar: pbar.update(1)
 
   images = load_images(images=images, pbar=pbar, pbar_prefix=pbar_prefix)
 

@@ -36,7 +36,7 @@ class Model(Document):
   models = ListField(EmbeddedDocumentField('ModelModel'))
   meta = {
       'indexes': [
-          {'fields': ['name']},
+          {'fields': ['name'], 'unique': True},
           {'fields': ['gender']},
           {'fields': ['facial_gender']},
           {'fields': ['galleries']},

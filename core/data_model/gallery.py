@@ -15,7 +15,7 @@ class Gallery(Document):
   is_solo = BooleanField(required=True)
   meta = {
         'indexes': [
-            {'fields': ['gid']},
+            {'fields': ['gid'], 'unique': True},
             {'fields': ['models']},
             {'fields': ['channels']},
             {'fields': ['tags']},

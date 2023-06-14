@@ -25,7 +25,7 @@ class Channel(Document):
   tags = ListField(EmbeddedDocumentField('ChannelTag'))
   meta = {
       'indexes': [
-          {'fields': ['name']},
+          {'fields': ['name'], 'unique': True},
           {'fields': ['parent']},
           {'fields': ['children']},
           {'fields': ['galleries']},

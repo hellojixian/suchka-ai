@@ -8,6 +8,7 @@ from core.face.gender import Gender
 from core.face.functions import alignment_procedure
 
 confidence_threshold = 0.95
+gender_threshold = 0.95
 cropped_face_size = (224, 224)
 
 def load_image(img):
@@ -79,10 +80,11 @@ def detect_face(img, face_detector):
       right_eye = keypoints["right_eye"]
       try:
         detected_face = alignment_procedure(detected_face, left_eye, right_eye)
+        resp.append((detected_face, img_region, confidence, cropped))
       except:
+        # if alignment fails, we will drop the face
         pass
 
-      resp.append((detected_face, img_region, confidence, cropped))
   return resp
 
 def extract_faces(img, target_size=(224, 224), face_detector=None):
@@ -155,7 +157,7 @@ def init_models(device='cpu'):
   return [face_detector, gender_model, embedding_model]
 
 
-def process_image(img, models = None):
+def process_image(img, models = None, return_fields=None):
   [face_detector, gender_model, embedding_model] = models if models is not None else init_models()
 
   # use mtcnn to detect faces
@@ -178,16 +180,19 @@ def process_image(img, models = None):
       embedding = embedding_model.embedding(features).cpu().detach().numpy().tolist()
       gender_probs = gender_model(features).cpu().detach().numpy().tolist()
 
+    # if max gender_probs is less than gender_threshold, discard
+    if np.max(gender_probs) <= gender_threshold: continue
+
     # discard expanded dimension
     if len(img.shape) == 4:
         img = img[0]
 
-    resp_obj["face"] = img[:, :, ::-1]
-    resp_obj["facial_area"] = region
-    resp_obj["confidence"] = confidence
-    resp_obj["embedding"] = embedding
-    resp_obj["cropped_face"] = cropped
-    resp_obj["gender"] = {gender_label: gender_probs[i] for i, gender_label in enumerate(Gender.labels)}
+    if return_fields and 'face' in return_fields:         resp_obj["face"] = img[:, :, ::-1]
+    if return_fields and 'facial_area' in return_fields:  resp_obj["facial_area"] = region
+    if return_fields and 'confidence' in return_fields:   resp_obj["confidence"] = confidence
+    if return_fields and 'embedding' in return_fields:    resp_obj["embedding"] = embedding
+    if return_fields and 'cropped_face' in return_fields: resp_obj["cropped_face"] = cropped
+    if return_fields and 'gender' in return_fields:       resp_obj["gender"] = {gender_label: gender_probs[i] for i, gender_label in enumerate(Gender.labels)}
     resp_objs.append(resp_obj)
 
   return resp_objs
