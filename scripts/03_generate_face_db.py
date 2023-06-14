@@ -42,7 +42,7 @@ def model_processor(sender, receiver, pbar):
         model = Model.objects(id=model_id).first()
         should_process = True
         if model.face_extracted == True: should_process = False
-        if ' ' in model.name.strip(): should_process = False
+        if ' ' not in model.name.strip(): should_process = False
         if should_process: process_model_faces(model=model, pbar=pbar)
         sender.put(['FINISHED', model_id])
       except Exception as e:
