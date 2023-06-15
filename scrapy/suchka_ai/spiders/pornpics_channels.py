@@ -50,14 +50,17 @@ class PornpicsSpider(scrapy.Spider):
         yield Request(channel_url, dont_filter=True, errback=self.errback_httpbin, meta={'channel': channel})
 
     def errback_httpbin(self, failure):
+      channel = failure.request.meta['channel']
       # Check if the failure is an HttpError with a 404 status code
       if failure.check(HttpError) and failure.value.response.status == 404:
         # Handle the 404 error here
-        channel = failure.request.meta['channel']
         channel_url_name = channel.name.lower().replace(' ', '+')
         channel_url = f"https://www.pornpics.com/?q={channel_url_name}/"
         self.log(f"404 Error: Retry another url {channel_url}")
         yield Request(channel_url, dont_filter=True, meta={'channel': channel})
+      elif failure.check(HttpError) and failure.value.response.status == 400:
+        self.log(f'400 Error: but still save the url: {failure.request.url}')
+        self.save_channel_url(channel, failure.request.url)
 
 
     def download_image(self, response):
@@ -90,10 +93,8 @@ class PornpicsSpider(scrapy.Spider):
       if channel.url: channel.save()
       return
 
-    def parse_channel(self, response):
-      channel = response.meta['channel']
-
-      parsed_url = urlparse(response.url)
+    def save_channel_url(self, channel, url):
+      parsed_url = urlparse(url)
       scheme = parsed_url.scheme
       netloc = parsed_url.netloc
       path = parsed_url.path
@@ -104,6 +105,10 @@ class PornpicsSpider(scrapy.Spider):
       cleaned_url = urlunparse((scheme, netloc, path, params, query, fragment))
       channel.url = cleaned_url
       if channel.logo.png: channel.save()
+
+    def parse_channel(self, response):
+      channel = response.meta['channel']
+      self.save_channel_url(channel, response.url)
       return
 
     def parse(self, response):
@@ -117,6 +122,6 @@ class PornpicsSpider(scrapy.Spider):
       channel.logo.background_color = matches.group(2) #e.g.: #000000
 
       if not channel.url:
-        yield response.follow(channel_url, callback=self.parse_channel, meta={'channel': channel})
+        yield response.follow(channel_url, callback=self.parse_channel, errback=self.errback_httpbin, meta={'channel': channel})
       if not channel.logo.png:
         yield response.follow(channel.logo.url, callback=self.download_image, meta={'channel': channel})
