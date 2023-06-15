@@ -74,10 +74,10 @@ if __name__ == '__main__':
   def next_model(collection, pbar):
     """Get next model with face not extracted"""
     model = next(collection)
-    # while ('face_extracted' in model.keys() and model['face_extracted'] == True) \
-    #   or (' ' not in model['name'].strip()):
-    #   model = next(collection)
-    #   pbar.update(1)
+    while ('face_extracted' in model.keys() and model['face_extracted'] == True) \
+      or (' ' not in model['name'].strip()):
+      model = next(collection)
+      pbar.update(1)
     return model
 
   with tqdm.tqdm(range(pydb.model.count_documents({})), desc=f'Process model faces') as pbar:
