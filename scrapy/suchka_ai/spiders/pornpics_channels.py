@@ -42,7 +42,7 @@ class PornpicsSpider(scrapy.Spider):
         channel = next(channels)
         channel._id = channel.id
         # if channel.logo:
-        #   self.log(f"Skipping {channel.name}")
+        #   self.log(f"Skipping existing channel: {channel.name}")
         #   continue
         channel.logo = ChannelLogo()
         channel_url_name = channel.name.lower().replace(' ', '+')
@@ -55,7 +55,7 @@ class PornpicsSpider(scrapy.Spider):
         # Handle the 404 error here
         channel = failure.request.meta['channel']
         channel_url_name = channel.name.lower().replace(' ', '+')
-        channel_url = f"https://www.pornpics.com//?q={channel_url_name}/"
+        channel_url = f"https://www.pornpics.com/?q={channel_url_name}/"
         self.log(f"404 Error: Retry another url {channel_url}")
         yield Request(channel_url, dont_filter=True, meta={'channel': channel})
 
