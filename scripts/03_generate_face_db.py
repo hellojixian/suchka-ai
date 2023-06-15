@@ -94,19 +94,19 @@ if __name__ == '__main__':
       pbar.update(1)
     return model
 
-  with tqdm.tqdm(range(pydb.model.count_documents({})), desc=f'Process model faces') as pbar:
-    for pid, (worker, reciver, sender, _) in workers.items():
-      sender.put(['MODEL_ID', next_model(model_collection, pbar=pbar)['_id']])
+  with tqdm.tqdm(range(pydb.model.count_documents({})), desc=f'Process model faces') as main_pbar:
+    for pid, (worker, reciver, sender, worker_pbar) in workers.items():
+      sender.put(['MODEL_ID', next_model(model_collection, pbar=main_pbar)['_id']])
       worker.last_update = time.time()
 
     while True:
-      for pid, (worker, reciver, sender, pbar) in workers.items():
+      for pid, (worker, reciver, sender, worker_pbar) in workers.items():
         if time.time() - worker.last_update > task_timeout:
           print(f'Worker {pid} timeout, restarting...')
           worker.terminate()
-          new_pid, data = start_worker(pbar=pbar, sender=reciver, reciver=sender)
+          new_pid, data = start_worker(pbar=worker_pbar, sender=reciver, reciver=sender)
           workers[new_pid] = data
-          data[2].put(['MODEL_ID', next_model(model_collection, pbar=pbar)['_id']])
+          data[2].put(['MODEL_ID', next_model(model_collection, pbar=main_pbar)['_id']])
           data[0].last_update = time.time()
           del workers[pid]
           break
@@ -114,8 +114,8 @@ if __name__ == '__main__':
         if reciver.empty(): continue
         queue_item = reciver.get()
         if queue_item[0] == 'FINISHED':
-          pbar.update(1)
-          sender.put(['MODEL_ID', next_model(model_collection, pbar=pbar)['_id']])
+          main_pbar.update(1)
+          sender.put(['MODEL_ID', next_model(model_collection, pbar=main_pbar)['_id']])
           worker.last_update = time.time()
 
 
