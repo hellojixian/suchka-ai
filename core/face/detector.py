@@ -26,7 +26,9 @@ def detect_face(img, face_detector):
 
   try:
     with torch.no_grad():
+      torch.cuda.synchronize(device=face_detector.device)
       boxes, probs, points = face_detector.detect(img_rgb, landmarks=True)
+
   except RuntimeError as e:
     if 'CUDA error: misaligned address' in str(e):
       print("captured CUDA error: misaligned address occurred.")
