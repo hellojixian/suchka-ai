@@ -26,7 +26,7 @@ class PornpicsSpider(scrapy.Spider):
     def start_requests(self):
       self.storage_root = f"{self.settings.get('IMAGES_STORE')}/{self.folder_name}"
 
-      galleries = Gallery.objects().sort('gid', 1).batch_size(10)
+      galleries = Gallery.objects().order_by('gid')
       galleries_channels = Gallery.objects().count()
       for _ in tqdm.tqdm(range(galleries_channels), desc="Scanning galleries"):
         gallery = next(galleries)
