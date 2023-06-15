@@ -16,8 +16,8 @@ class ChannelTag(EmbeddedDocument):
 class Channel(Document):
   name = StringField(required=True)
   logo = StringField()
-  background_color = StringField()
   url = StringField()
+  logo_filename = StringField()
   galleries = ListField(ReferenceField('Gallery'))
   parent = ReferenceField('Channel')
   children = ListField(ReferenceField('Channel'))

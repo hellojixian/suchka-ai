@@ -67,6 +67,7 @@ def group_faces(model:Model, face_results:dict):
   return grouped_faces, face_dataset
 
 def find_common_faces(grouped_faces:dict, face_dataset:dict):
+  if len(group_faces) == 0: return []
   # find which group of faces contains the most galleries
   group_galleries = {}
   for group_id in range(len(grouped_faces)):
@@ -127,8 +128,6 @@ def process_model_faces(model:Model, pbar=None):
       faces[i]['image_path'] = image_path
 
   grouped_faces, face_dataset = group_faces(model, results)
-  if grouped_faces is None: return
-
   common_faces = find_common_faces(grouped_faces, face_dataset)
   save_model_faces(model, common_faces, pbar=pbar, pbar_prefix=f'{model.name.rjust(20)}')
   return

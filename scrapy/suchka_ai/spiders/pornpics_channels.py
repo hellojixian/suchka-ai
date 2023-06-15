@@ -6,35 +6,37 @@ from ..items import ImageCaptionPairItem
 from scrapy.loader import ItemLoader
 import tqdm
 from scrapy.http import Request
+
 from dotenv import load_dotenv
 load_dotenv()
 
+from core.data_model.channel import Channel
+import base64
+import cv2
 
 class PornpicsSpider(scrapy.Spider):
+    """for fetching channel logo and URL"""
     name = "pornpics_channels"
     allowed_domains = ["pornpics.com"]
     folder_name = 'pornpics'
 
     def start_requests(self):
-      data_folder = os.path.join(self.settings.get('IMAGES_STORE'), self.folder_name)
+      channels = Channel.objects()
+      total_channels = Channel.objects().count()
+      for _ in tqdm.tqdm(range(total_channels), desc="Scanning channels"):
+        channel = next(channels)
+        channel_url_name = channel.name.lower().replace(' ', '-')
+        channel_url = f"https://www.pornpics.com/channels/{channel_url_name}/"
+        yield Request(channel_url, dont_filter=True)
 
-      galleries = set()
-      folders = [f for f in os.listdir(data_folder) if os.path.isdir(os.path.join(data_folder, f))]
-      for f in folders: galleries.add(f)
+    def download_image(self, response, filename):
+      folder = os.path.join(self.settings.get('IMAGES_STORE'), self.folder_name)
+      if not os.path.exists(folder): os.mkdir(folder)
+      with open(f"{folder}/{filename}", 'wb') as f:
+        f.write(response.body)
 
-      # sort galleries by name
-      galleries = sorted(galleries, key=lambda f: f.name)
-      for f in tqdm.tqdm(galleries, desc="Scanning data folder"):
-        data_file = f"{f.path}/data.json"
-        if not os.path.exists(data_file): continue
-        with open(data_file, 'r') as json_file:
-          data = json.load(json_file)
-        if data['copyright'] is None: continue
-        if ',' in data['copyright']: continue
-        url = data['url']
-        yield Request(url, dont_filter=True)
-      # res = super().start_requests()
-
+    def generate_jpg_logo(self, png_logo, background):
+      pass
 
     def parse(self, response):
       channels = ", ".join(response.css(".gallery-info__item a::text").getall())
