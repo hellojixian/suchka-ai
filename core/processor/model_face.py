@@ -67,7 +67,7 @@ def group_faces(model:Model, face_results:dict):
   return grouped_faces, face_dataset
 
 def find_common_faces(grouped_faces:dict, face_dataset:dict):
-  if len(group_faces) == 0: return []
+  if len(grouped_faces) == 0: return []
   # find which group of faces contains the most galleries
   group_galleries = {}
   for group_id in range(len(grouped_faces)):
