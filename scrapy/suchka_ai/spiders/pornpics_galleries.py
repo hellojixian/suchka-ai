@@ -16,6 +16,7 @@ db = Database()
 
 from scrapy.utils.python import to_bytes
 import hashlib
+from mongoengine import NotUniqueError
 
 class PornpicsSpider(scrapy.Spider):
     """for fetching channel logo and URL"""
@@ -25,7 +26,7 @@ class PornpicsSpider(scrapy.Spider):
     def start_requests(self):
       self.storage_root = f"{self.settings.get('IMAGES_STORE')}/{self.folder_name}"
 
-      galleries = Gallery.objects()
+      galleries = Gallery.objects().sort('gid', 1).batch_size(10)
       galleries_channels = Gallery.objects().count()
       for _ in tqdm.tqdm(range(galleries_channels), desc="Scanning galleries"):
         gallery = next(galleries)
@@ -42,13 +43,18 @@ class PornpicsSpider(scrapy.Spider):
         image_guid = hashlib.sha1(to_bytes(image_url)).hexdigest()
         local_path = f"{self.storage_root}/{gid}/{image_guid}.jpg"
         if not os.path.exists(local_path): continue
-        image = Image(
-          url = image_url,
-          gid = gid,
-          gallery = gallery,
-          filename = f"{image_guid}.jpg",
-        )
-        image.save()
-        gallery.images.append(image)
+        try:
+          image = Image(
+            url = image_url,
+            gid = gid,
+            gallery = gallery,
+            filename = f"{image_guid}.jpg",
+          )
+          image.save()
+          gallery.images.append(image)
+        except NotUniqueError as e:
+          self.log(f"Skip: Image URL exists: {image_url}")
+        except Exception as e:
+          self.log(f"Error: {e}")
       gallery.save()
 

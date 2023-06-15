@@ -17,6 +17,7 @@ class Gallery(Document):
   meta = {
         'indexes': [
             {'fields': ['gid'], 'unique': True},
+            {'fields': ['url'], 'unique': True},
             {'fields': ['models']},
             {'fields': ['channels']},
             {'fields': ['tags']},

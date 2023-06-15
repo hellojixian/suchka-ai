@@ -10,8 +10,9 @@ class Image(Document):
   url = StringField()
   meta = {
         'indexes': [
+            {'fields': ['url'], 'unique': True},
+            {'fields': ['filename'], 'unique': True},
             {'fields': ['gallery']},
-            {'fields': ['filename']},
             {'fields': ['gid']},
         ]
   }
