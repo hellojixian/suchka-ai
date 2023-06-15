@@ -5,7 +5,7 @@ sys.path.append(project_root)
 
 import numpy as np
 import cv2
-from core.data_model import Model, Face
+from core.data_model import Model, Face, GenderEnum
 from core.face.batch_processor import process_batch
 from core.face.gender import Gender
 
@@ -42,7 +42,10 @@ def group_faces(model:Model, face_results:dict):
       face = faces[i]
       # print(face.keys())
       facial_gender = get_facial_gender([face])
-      if model.gender and facial_gender != model.gender.value: continue
+      if model.gender:
+        expected_gender = model.gender.value
+        if model.gender is GenderEnum.SHEMALE: expected_gender = GenderEnum.FEMALE.value
+        if facial_gender != expected_gender: continue
       face_dataset[f'{image_path}_face{i}'] = face
       face_embeddings[f'{image_path}_face{i}'] = face['embedding']
   grouped_faces = []
