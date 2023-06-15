@@ -45,7 +45,7 @@ class PornpicsSpider(scrapy.Spider):
         #   self.log(f"Skipping existing channel: {channel.name}")
         #   continue
         channel.logo = ChannelLogo()
-        channel_url_name = channel.name.lower().replace(' ', '+')
+        channel_url_name = channel.name.lower().replace(' ', '-')
         channel_url = f"https://www.pornpics.com/channels/{channel_url_name}/"
         yield Request(channel_url, dont_filter=True, errback=self.errback_httpbin, meta={'channel': channel})
 
