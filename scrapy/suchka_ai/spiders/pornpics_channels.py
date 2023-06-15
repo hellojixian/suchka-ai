@@ -47,7 +47,6 @@ class PornpicsSpider(scrapy.Spider):
         channel.logo = ChannelLogo()
         channel_url_name = channel.name.lower().replace(' ', '+')
         channel_url = f"https://www.pornpics.com/channels/{channel_url_name}/"
-        # channel_url = f"https://www.pornpics.com//?q={channel_url_name}/"
         yield Request(channel_url, dont_filter=True, errback=self.errback_httpbin, meta={'channel': channel})
 
     def errback_httpbin(self, failure):
