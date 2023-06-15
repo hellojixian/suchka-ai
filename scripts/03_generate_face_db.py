@@ -56,7 +56,8 @@ if __name__ == '__main__':
     # CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
     # For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
     # Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
-    raise Exception("CUDA_LAUNCH_BLOCKING and TORCH_USE_CUDA_DSA must be set to 1")
+    # raise Exception("CUDA_LAUNCH_BLOCKING and TORCH_USE_CUDA_DSA must be set to 1")
+    pass
   # Register the signal handler for SIGINT
   signal.signal(signal.SIGINT, signal_handler)
 

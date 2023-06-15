@@ -1,6 +1,7 @@
 import os
 import cv2
 import torch
+import time
 import numpy as np
 from facenet_pytorch import MTCNN
 from core.face.vggface import VGGFace
@@ -30,6 +31,7 @@ def detect_face(img, face_detector):
       boxes, probs, points = face_detector.detect(img_rgb, landmarks=True)
 
   except RuntimeError as e:
+    time.sleep(1)
     if 'CUDA error: misaligned address' in str(e):
       print("captured CUDA error: misaligned address occurred.")
     else:
