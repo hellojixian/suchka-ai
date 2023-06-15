@@ -35,8 +35,11 @@ def signal_handler(signal, frame):
 
 def model_processor(sender, receiver, pbar):
   while True:
-    if receiver.empty(): continue
-    queue_item = receiver.get()
+    try:
+      if receiver.empty(): continue
+      queue_item = receiver.get()
+    except Exception as e: break
+
     if queue_item[0] == 'MODEL_ID':
       model_id = queue_item[1]
       try:
@@ -87,26 +90,36 @@ if __name__ == '__main__':
   model_collection = pydb.model.find({}).sort('galleries.size', 1).batch_size(num_processes*2)
   def next_model(collection, pbar):
     """Get next model with face not extracted"""
-    model = next(collection)
-    while ('face_extracted' in model.keys() and model['face_extracted'] == True) \
-      or (' ' not in model['name'].strip()):
+    try:
       model = next(collection)
-      pbar.update(1)
+      while model and ('face_extracted' in model.keys() and model['face_extracted'] == True) \
+        or (' ' not in model['name'].strip()):
+        model = next(collection)
+        pbar.update(1)
+    except StopIteration:
+      model = None
     return model
 
   with tqdm.tqdm(range(pydb.model.count_documents({})), desc=f'Process model faces') as main_pbar:
+    workers_started = False
     for pid, (worker, reciver, sender, worker_pbar) in workers.items():
-      sender.put(['MODEL_ID', next_model(model_collection, pbar=main_pbar)['_id']])
-      worker.last_update = time.time()
+      try:
+        next_model_obj = next_model(model_collection, pbar=main_pbar)
+        if not next_model_obj: break
+        sender.put(['MODEL_ID', next_model_obj['_id']])
+        worker.last_update = time.time()
+        workers_started = True
+      except Exception as e:pass
 
-    while True:
+    while workers_started and len(workers) > 0:
       for pid, (worker, reciver, sender, worker_pbar) in workers.items():
         if time.time() - worker.last_update > task_timeout:
+          next_model_obj = next_model(model_collection, pbar=main_pbar)
           worker_pbar.set_description(f'Worker {pid} timeout, restarting...')
           worker.terminate()
           new_pid, data = start_worker(pbar=worker_pbar, sender=reciver, reciver=sender)
           workers[new_pid] = data
-          data[2].put(['MODEL_ID', next_model(model_collection, pbar=main_pbar)['_id']])
+          data[2].put(['MODEL_ID', next_model_obj['_id']])
           data[0].last_update = time.time()
           del workers[pid]
           break
@@ -115,8 +128,16 @@ if __name__ == '__main__':
         queue_item = reciver.get()
         if queue_item[0] == 'FINISHED':
           main_pbar.update(1)
-          sender.put(['MODEL_ID', next_model(model_collection, pbar=main_pbar)['_id']])
-          worker.last_update = time.time()
+          next_model_obj = next_model(model_collection, pbar=main_pbar)
+          if next_model_obj:
+            sender.put(['MODEL_ID', next_model_obj['_id']])
+            worker.last_update = time.time()
+          else:
+            worker.join()
+            worker_pbar.close()
+            sender.close()
+            reciver.close()
+            del workers[pid]
 
 
 
