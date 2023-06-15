@@ -24,8 +24,14 @@ def detect_face(img, face_detector):
 
   img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # mtcnn expects RGB but OpenCV read BGR
 
-  with torch.no_grad():
-    boxes, probs, points = face_detector.detect(img_rgb, landmarks=True)
+  try:
+    with torch.no_grad():
+      boxes, probs, points = face_detector.detect(img_rgb, landmarks=True)
+  except RuntimeError as e:
+    if 'CUDA error: misaligned address' in str(e):
+      print("captured CUDA error: misaligned address occurred.")
+    else:
+      print("captured An error occurred:", e)
 
   if boxes is None: return resp
 
