@@ -27,8 +27,8 @@ def detect_face(img, face_detector):
 
   try:
     with torch.no_grad():
-      with torch.cuda.synchronize(device=face_detector.device):
-        boxes, probs, points = face_detector.detect(img_rgb, landmarks=True)
+      torch.cuda.synchronize(device=face_detector.device)
+      boxes, probs, points = face_detector.detect(img_rgb, landmarks=True)
 
   except RuntimeError as e:
     time.sleep(1)
@@ -194,11 +194,11 @@ def process_image(img, models = None, return_fields=None):
 
       # use alighed face to extract features
       torch_img = torch.from_numpy(np.squeeze(img).transpose(2, 0, 1)).to(embedding_model.device)
-      with torch.cuda.synchronize(device=embedding_model.device):
-        features = embedding_model.features(torch_img)
-        embedding = embedding_model.embedding(features).cpu().detach().numpy().tolist()
-      with torch.cuda.synchronize(device=gender_model.device):
-        gender_probs = gender_model(features).cpu().detach().numpy().tolist()
+      torch.cuda.synchronize(device=embedding_model.device)
+      features = embedding_model.features(torch_img)
+      embedding = embedding_model.embedding(features).cpu().detach().numpy().tolist()
+      torch.cuda.synchronize(device=gender_model.device)
+      gender_probs = gender_model(features).cpu().detach().numpy().tolist()
 
     # if max gender_probs is less than gender_threshold, discard
     if np.max(gender_probs) <= gender_threshold: continue
