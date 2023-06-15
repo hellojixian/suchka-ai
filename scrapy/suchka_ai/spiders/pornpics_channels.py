@@ -2,12 +2,14 @@ import scrapy
 import json
 import re
 import os, sys
+import traceback
 
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../'))
 sys.path.append(project_root)
 
 import tqdm
 from scrapy.http import Request
+from scrapy.spidermiddlewares.httperror import HttpError
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -39,10 +41,25 @@ class PornpicsSpider(scrapy.Spider):
       for _ in tqdm.tqdm(range(total_channels), desc="Scanning channels"):
         channel = next(channels)
         channel._id = channel.id
+        # if channel.logo:
+        #   self.log(f"Skipping {channel.name}")
+        #   continue
         channel.logo = ChannelLogo()
         channel_url_name = channel.name.lower().replace(' ', '+')
+        channel_url = f"https://www.pornpics.com/channels/{channel_url_name}/"
+        # channel_url = f"https://www.pornpics.com//?q={channel_url_name}/"
+        yield Request(channel_url, dont_filter=True, errback=self.errback_httpbin, meta={'channel': channel})
+
+    def errback_httpbin(self, failure):
+      # Check if the failure is an HttpError with a 404 status code
+      if failure.check(HttpError) and failure.value.response.status == 404:
+        # Handle the 404 error here
+        channel = failure.request.meta['channel']
+        channel_url_name = channel.name.lower().replace(' ', '+')
         channel_url = f"https://www.pornpics.com//?q={channel_url_name}/"
+        self.log(f"404 Error: Retry another url {channel_url}")
         yield Request(channel_url, dont_filter=True, meta={'channel': channel})
+
 
     def download_image(self, response):
       channel = response.meta['channel']
@@ -52,24 +69,6 @@ class PornpicsSpider(scrapy.Spider):
       image_bytes = response.body
       nparr = np.frombuffer(image_bytes, np.uint8)
       image = cv2.imdecode(nparr, cv2.IMREAD_UNCHANGED)
-
-      change_threshold = 10
-      gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-      left_spacing = 0
-      for x in range(image.shape[1]):
-        left_spacing += 1
-        diff_count = np.count_nonzero(np.abs((gray_image[:, 0] - gray_image[:, x])))
-        if diff_count > change_threshold :break
-
-      right_spacing = 0
-      for x in range(image.shape[1] - 1, -1, -1):
-        right_spacing += 1
-        diff_count = np.count_nonzero(np.abs((gray_image[:, 0] - gray_image[:, x])))
-        if diff_count > change_threshold :break
-
-      height, width, _ = image.shape
-      new_width = width - (right_spacing - left_spacing)
-      image = image[:, 0:new_width]
       cv2.imwrite(filepath, image)
 
       # apply background color and save as jpg
@@ -118,5 +117,7 @@ class PornpicsSpider(scrapy.Spider):
       channel.logo.url = matches.group(1)
       channel.logo.background_color = matches.group(2) #e.g.: #000000
 
-      yield response.follow(channel_url, callback=self.parse_channel, meta={'channel': channel})
-      yield response.follow(channel.logo.url, callback=self.download_image, meta={'channel': channel})
+      if not channel.url:
+        yield response.follow(channel_url, callback=self.parse_channel, meta={'channel': channel})
+      if not channel.logo.png:
+        yield response.follow(channel.logo.url, callback=self.download_image, meta={'channel': channel})

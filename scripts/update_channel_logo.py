@@ -37,6 +37,8 @@ for logo_file in tqdm.tqdm(logo_files, desc="Processing channel logos"):
       diff_count = np.count_nonzero(np.abs((gray_image[:, 0] - gray_image[:, x])))
       if diff_count > change_threshold :break
 
+    if right_spacing <= left_spacing: continue
+
     height, width, _ = image.shape
     new_width = width - (right_spacing - left_spacing)
 
