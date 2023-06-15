@@ -40,8 +40,8 @@ class PornpicsSpider(scrapy.Spider):
         channel = next(channels)
         channel._id = channel.id
         channel.logo = ChannelLogo()
-        channel_url_name = channel.name.lower().replace(' ', '-')
-        channel_url = f"https://www.pornpics.com/channels/{channel_url_name}/"
+        channel_url_name = channel.name.lower().replace(' ', '+')
+        channel_url = f"https://www.pornpics.com//?q={channel_url_name}/"
         yield Request(channel_url, dont_filter=True, meta={'channel': channel})
 
     def download_image(self, response):
@@ -53,6 +53,23 @@ class PornpicsSpider(scrapy.Spider):
       nparr = np.frombuffer(image_bytes, np.uint8)
       image = cv2.imdecode(nparr, cv2.IMREAD_UNCHANGED)
 
+      change_threshold = 10
+      gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+      left_spacing = 0
+      for x in range(image.shape[1]):
+        left_spacing += 1
+        diff_count = np.count_nonzero(np.abs((gray_image[:, 0] - gray_image[:, x])))
+        if diff_count > change_threshold :break
+
+      right_spacing = 0
+      for x in range(image.shape[1] - 1, -1, -1):
+        right_spacing += 1
+        diff_count = np.count_nonzero(np.abs((gray_image[:, 0] - gray_image[:, x])))
+        if diff_count > change_threshold :break
+
+      height, width, _ = image.shape
+      new_width = width - (right_spacing - left_spacing)
+      image = image[:, 0:new_width]
       cv2.imwrite(filepath, image)
 
       # apply background color and save as jpg
