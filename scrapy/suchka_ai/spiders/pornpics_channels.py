@@ -41,9 +41,9 @@ class PornpicsSpider(scrapy.Spider):
       for _ in tqdm.tqdm(range(total_channels), desc="Scanning channels"):
         channel = next(channels)
         channel._id = channel.id
-        # if channel.logo:
-        #   self.log(f"Skipping existing channel: {channel.name}")
-        #   continue
+        if channel.logo:
+          self.log(f"Skipping existing channel: {channel.name}")
+          continue
         channel.logo = ChannelLogo()
         channel_url_name = channel.name.lower().replace(' ', '-')
         channel_url = f"https://www.pornpics.com/channels/{channel_url_name}/"
@@ -58,10 +58,12 @@ class PornpicsSpider(scrapy.Spider):
         channel_url = f"https://www.pornpics.com/?q={channel_url_name}/"
         self.log(f"404 Error: Retry another url {channel_url}")
         yield Request(channel_url, dont_filter=True, meta={'channel': channel})
-      elif failure.check(HttpError) and failure.value.response.status == 400:
-        self.log(f'400 Error: but still save the url: {failure.request.url}')
-        self.save_channel_url(channel, failure.request.url)
 
+    def errback_channel_url(self, failure):
+      channel = failure.request.meta['channel']
+      if failure.check(HttpError) and failure.value.response.status:
+        self.log(f'{failure.value.response.status} Error: but still save the url: {failure.request.url}')
+        self.save_channel_url(channel, failure.request.url)
 
     def download_image(self, response):
       channel = response.meta['channel']
@@ -113,15 +115,18 @@ class PornpicsSpider(scrapy.Spider):
 
     def parse(self, response):
       channel = response.meta['channel']
+
       logo_style = response.css(".sponsor-type-4 a.left-side::attr(style)").get()
+      if logo_style:
+        matches = re.search(r"url\(\s*(.+)\)\s+(.*)\;", logo_style)
+        if not matches: return
+        channel.logo.url = matches.group(1)
+        channel.logo.background_color = matches.group(2) #e.g.: #000000
+        if not channel.logo.png:
+          yield response.follow(channel.logo.url, callback=self.download_image, meta={'channel': channel})
+
       channel_url = response.css(".sponsor-type-4 a.left-side::attr(href)").get()
-      matches = re.search(r"url\(\s*(.+)\)\s+(.*)\;", logo_style)
-
-      if not matches: return
-      channel.logo.url = matches.group(1)
-      channel.logo.background_color = matches.group(2) #e.g.: #000000
-
+      if not channel_url:
+        channel_url = f"/go/{channel.name.lower().replace(' ', '')}"
       if not channel.url:
-        yield response.follow(channel_url, callback=self.parse_channel, errback=self.errback_httpbin, meta={'channel': channel})
-      if not channel.logo.png:
-        yield response.follow(channel.logo.url, callback=self.download_image, meta={'channel': channel})
+        yield response.follow(channel_url, callback=self.parse_channel, errback=self.errback_channel_url, meta={'channel': channel})

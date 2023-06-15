@@ -25,7 +25,7 @@ pymongo_client = MongoClient(os.environ.get('MONGODB_URI'))
 pydb = pymongo_client.get_database()
 
 num_processes = 6
-task_timeout = 60
+task_timeout = 90
 
 def signal_handler(signal, frame):
   print("Ctrl+C pressed. Exiting gracefully...")
@@ -66,14 +66,14 @@ if __name__ == '__main__':
   manager = mp.Manager()
   globals()['manager'] = manager
 
-  def start_worker():
-    sender = manager.Queue()
-    reciver = manager.Queue()
-    pbar = tqdm.tqdm(desc=f'Worker {i}', total=0)
+  def start_worker(pbar=None, sender=None, reciver=None):
+    if not sender: sender = manager.Queue()
+    if not reciver: reciver = manager.Queue()
+    if not pbar: pbar = tqdm.tqdm(desc=f'Worker started', total=0)
     worker = mp.Process(target=model_processor, args=(sender,reciver,pbar,))
     worker.start()
     worker.last_update = time.time()
-    pbar.set_description(f'Worker {i} (PID: {worker.pid})')
+    pbar.set_description(f'Worker started (PID: {worker.pid})')
     return worker.pid, (worker, sender, reciver, pbar)
 
   workers = {}
@@ -100,13 +100,14 @@ if __name__ == '__main__':
       worker.last_update = time.time()
 
     while True:
-      for pid, (worker, reciver, sender, _) in workers.items():
+      for pid, (worker, reciver, sender, pbar) in workers.items():
         if time.time() - worker.last_update > task_timeout:
           print(f'Worker {pid} timeout, restarting...')
           worker.terminate()
-          new_pid, data = start_worker()
+          new_pid, data = start_worker(pbar=pbar, sender=reciver, reciver=sender)
           workers[new_pid] = data
           data[2].put(['MODEL_ID', next_model(model_collection, pbar=pbar)['_id']])
+          data[0].last_update = time.time()
           del workers[pid]
           break
 
