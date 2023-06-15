@@ -11,6 +11,7 @@ class Gallery(Document):
   channels = ListField(ReferenceField('Channel'))
   tags = ListField(ReferenceField('Tag'))
   models = ListField(ReferenceField('Model'))
+  images = ListField(ReferenceField('Image'))
   path = StringField(required=True)
   is_solo = BooleanField(required=True)
   meta = {

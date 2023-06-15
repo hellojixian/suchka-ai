@@ -84,7 +84,7 @@ if __name__ == '__main__':
 
   results = []
   # using pymongo for faster query
-  model_collection = pydb.model.find({}).sort('galleries.size', 1)
+  model_collection = pydb.model.find({}).sort('galleries.size', 1).batch_size(num_processes*2)
   def next_model(collection, pbar):
     """Get next model with face not extracted"""
     model = next(collection)
@@ -102,7 +102,7 @@ if __name__ == '__main__':
     while True:
       for pid, (worker, reciver, sender, worker_pbar) in workers.items():
         if time.time() - worker.last_update > task_timeout:
-          print(f'Worker {pid} timeout, restarting...')
+          worker_pbar.set_description(f'Worker {pid} timeout, restarting...')
           worker.terminate()
           new_pid, data = start_worker(pbar=worker_pbar, sender=reciver, reciver=sender)
           workers[new_pid] = data
