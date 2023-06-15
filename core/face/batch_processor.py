@@ -4,7 +4,6 @@ import tqdm
 import cv2
 import concurrent.futures
 import torch
-import time
 from .detector import process_image, init_models
 
 PROCESS_IMAGE_TIMEOUT = 5
@@ -28,7 +27,6 @@ def process_image_worker(img, models, pbar=None):
   results = None
   try:
     results = process_image(img, models=models, return_fields=['gender', 'embedding', 'cropped_face'])
-    time.sleep(0.01)
   except Exception as e:
     print(e)
     traceback.print_exc()

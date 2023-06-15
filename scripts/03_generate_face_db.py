@@ -50,6 +50,13 @@ def model_processor(sender, receiver, pbar):
         traceback.print_exc()
 
 if __name__ == '__main__':
+  if not os.environ['CUDA_LAUNCH_BLOCKING'] or not os.environ['TORCH_USE_CUDA_DSA']:
+    # enable these setting to prevent this error:
+    # RuntimeError: CUDA error: misaligned address
+    # CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+    # For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+    # Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+    raise Exception("CUDA_LAUNCH_BLOCKING and TORCH_USE_CUDA_DSA must be set to 1")
   # Register the signal handler for SIGINT
   signal.signal(signal.SIGINT, signal_handler)
 

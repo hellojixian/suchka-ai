@@ -16,13 +16,12 @@ from core.data_model.channel import Channel, ChannelLogo
 from core.database import Database
 db = Database()
 
-import base64
+from PIL import Image
+from urllib.parse import urlparse, urlunparse
 import cv2
 import numpy as np
 
 logo_width = 260
-
-os.environ['ROBOTSTXT_OBEY'] = 'False'
 
 class PornpicsSpider(scrapy.Spider):
     """for fetching channel logo and URL"""
@@ -30,12 +29,16 @@ class PornpicsSpider(scrapy.Spider):
     folder_name = 'channels'
 
     def start_requests(self):
-      self.channel_folder = self.settings.get('IMAGES_STORE')
+      self.channel_folder = f"{self.settings.get('IMAGES_STORE')}/channels"
       if not os.path.exists(self.channel_folder): os.mkdir(self.channel_folder)
+      if not os.path.exists(f"{self.channel_folder}/png"): os.mkdir(f"{self.channel_folder}/png")
+      if not os.path.exists(f"{self.channel_folder}/jpg"): os.mkdir(f"{self.channel_folder}/jpg")
+
       channels = Channel.objects()
       total_channels = Channel.objects().count()
       for _ in tqdm.tqdm(range(total_channels), desc="Scanning channels"):
         channel = next(channels)
+        channel._id = channel.id
         channel.logo = ChannelLogo()
         channel_url_name = channel.name.lower().replace(' ', '-')
         channel_url = f"https://www.pornpics.com/channels/{channel_url_name}/"
@@ -44,41 +47,48 @@ class PornpicsSpider(scrapy.Spider):
     def download_image(self, response):
       channel = response.meta['channel']
       filename = channel.name.lower().replace(' ', '-') + '.png'
-      filepath = f"{self.channel_folder}/{filename}"
+      filepath = f"{self.channel_folder}/png/{filename}"
 
       image_bytes = response.body
       nparr = np.frombuffer(image_bytes, np.uint8)
       image = cv2.imdecode(nparr, cv2.IMREAD_UNCHANGED)
 
-      # crop the image to logo_width
-      height, width, _ = image.shape
-      new_width = 380
-      crop_x = (width - new_width) // 2
-      crop_y = 0
-      cropped_image = image[crop_y:crop_y + height, crop_x:crop_x + new_width]
-      cv2.imwrite(filepath, cropped_image)
+      cv2.imwrite(filepath, image)
 
       # apply background color and save as jpg
       jpg_filename = channel.name.lower().replace(' ', '-') + '.jpg'
-      jpg_filepath = f"{self.channel_folder}/{jpg_filename}"
+      jpg_filepath = f"{self.channel_folder}/jpg/{jpg_filename}"
 
       hex_color = channel.logo.background_color.lstrip('#')
       r = int(hex_color[0:2], 16)
       g = int(hex_color[2:4], 16)
       b = int(hex_color[4:6], 16)
       background_color = (r, g, b)
-      background = np.full((height, width, 3), background_color, dtype=np.uint8)
-      jpg_image = cv2.bitwise_or(cropped_image, background)
-      cv2.imwrite(jpg_filepath, jpg_image, [cv2.IMWRITE_JPEG_QUALITY, 90])
+
+      png_image = Image.open(filepath)
+      background = Image.new("RGB", png_image.size, background_color)
+      background.paste(png_image, (0, 0), png_image)
+      background.save(jpg_filepath, 'JPEG', quality=120)
 
       channel.logo.png = filename
-      if channel.url is not None: channel.save()
+      channel.logo.jpg = jpg_filename
+      if channel.url: channel.save()
       return
 
     def parse_channel(self, response):
       channel = response.meta['channel']
-      channel.url = response.url
-      if channel.logo.jpg is not None: channel.save()
+
+      parsed_url = urlparse(response.url)
+      scheme = parsed_url.scheme
+      netloc = parsed_url.netloc
+      path = parsed_url.path
+      params = ''
+      query = ''
+      fragment = ''
+
+      cleaned_url = urlunparse((scheme, netloc, path, params, query, fragment))
+      channel.url = cleaned_url
+      if channel.logo.png: channel.save()
       return
 
     def parse(self, response):

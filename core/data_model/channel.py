@@ -14,7 +14,7 @@ class ChannelTag(EmbeddedDocument):
   count = IntField()
 
 class ChannelLogo(EmbeddedDocument):
-  backgroundcolor = StringField()
+  background_color = StringField()
   url = StringField()
   png = StringField()
   jpg = StringField()
@@ -22,7 +22,7 @@ class ChannelLogo(EmbeddedDocument):
 class Channel(Document):
   name = StringField(required=True)
   url = StringField()
-  logo = ReferenceField('ChannelLogo')
+  logo = EmbeddedDocumentField('ChannelLogo')
   galleries = ListField(ReferenceField('Gallery'))
   parent = ReferenceField('Channel')
   children = ListField(ReferenceField('Channel'))
