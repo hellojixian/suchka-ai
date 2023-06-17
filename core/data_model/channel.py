@@ -4,13 +4,13 @@ load_dotenv()
 
 # channel object
 class ChannelModel(EmbeddedDocument):
-  model = ReferenceField('Model')
-  galleries = ListField(ReferenceField('Gallery'))
+  model = LazyReferenceField('Model')
+  galleries = ListField(LazyReferenceField('Gallery'))
   count = IntField()
 
 class ChannelTag(EmbeddedDocument):
-  tag = ReferenceField('Tag')
-  galleries = ListField(ReferenceField('Gallery'))
+  tag = LazyReferenceField('Tag')
+  galleries = ListField(LazyReferenceField('Gallery'))
   count = IntField()
 
 class ChannelLogo(EmbeddedDocument):
@@ -23,9 +23,9 @@ class Channel(Document):
   name = StringField(required=True)
   url = StringField()
   logo = EmbeddedDocumentField('ChannelLogo')
-  galleries = ListField(ReferenceField('Gallery'))
-  parent = ReferenceField('Channel')
-  children = ListField(ReferenceField('Channel'))
+  parent = LazyReferenceField('Channel')
+  galleries = ListField(LazyReferenceField('Gallery'))
+  children = ListField(LazyReferenceField('Channel'))
   models = ListField(EmbeddedDocumentField('ChannelModel'))
   tags = ListField(EmbeddedDocumentField('ChannelTag'))
   meta = {

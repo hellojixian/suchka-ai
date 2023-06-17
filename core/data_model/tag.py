@@ -4,15 +4,20 @@ load_dotenv()
 
 # tag object
 class TagModel(EmbeddedDocument):
-  model = ReferenceField('Model')
+  model = LazyReferenceField('Model')
   gallery_count = IntField()
 
 class TagChannel(EmbeddedDocument):
-  channel = ReferenceField('Channel')
+  channel = LazyReferenceField('Channel')
+  gallery_count = IntField()
+
+class TagRelatedTag(EmbeddedDocument):
+  tag = LazyReferenceField('Tag')
   gallery_count = IntField()
 
 class Tag(Document):
   name = StringField(required=True)
+  related_tags = ListField(EmbeddedDocumentField('TagRelatedTag'))
   models = ListField(EmbeddedDocumentField('TagModel'))
   channels = ListField(EmbeddedDocumentField('TagChannel'))
   gallery_count = IntField()

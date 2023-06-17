@@ -4,18 +4,18 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class ModelTag(EmbeddedDocument):
-  tag = ReferenceField('Tag')
-  galleries = ListField(ReferenceField('Gallery'))
+  tag = LazyReferenceField('Tag')
+  galleries = ListField(LazyReferenceField('Gallery'))
   count = IntField()
 
 class ModelChannel(EmbeddedDocument):
-  channel = ReferenceField('Channel')
-  galleries = ListField(ReferenceField('Gallery'))
+  channel = LazyReferenceField('Channel')
+  galleries = ListField(LazyReferenceField('Gallery'))
   count = IntField()
 
-class ModelModel(EmbeddedDocument):
-  model = ReferenceField('Model')
-  galleries = ListField(ReferenceField('Gallery'))
+class ModelRelatedModel(EmbeddedDocument):
+  model = LazyReferenceField('Model')
+  galleries = ListField(LazyReferenceField('Gallery'))
   count = IntField()
 
 class GenderEnum(Enum):
@@ -27,13 +27,13 @@ class Model(Document):
   name = StringField(required=True)
   gender = EnumField(GenderEnum)
   race = StringField()
-  faces = ListField(ReferenceField('Face'))
+  faces = ListField(LazyReferenceField('Face'))
   face_extracted = BooleanField()
   facial_gender = EnumField(GenderEnum)
-  galleries = ListField(ReferenceField('Gallery'))
+  galleries = ListField(LazyReferenceField('Gallery'))
   tags = ListField(EmbeddedDocumentField('ModelTag'))
   channels = ListField(EmbeddedDocumentField('ModelChannel'))
-  models = ListField(EmbeddedDocumentField('ModelModel'))
+  related_models = ListField(EmbeddedDocumentField('ModelRelatedModel'))
   meta = {
       'indexes': [
           {'fields': ['name'], 'unique': True},

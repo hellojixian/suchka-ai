@@ -10,8 +10,8 @@ class Face(Document):
   filename = StringField(required=True)
   source = StringField(required=True)
   embedding_bin = BinaryField()
-  model = ReferenceField('Model')
-  gallery = ReferenceField('Gallery')
+  model = LazyReferenceField('Model')
+  gallery = LazyReferenceField('Gallery')
   meta = {
       'indexes': [
           {'fields': ['name']},

@@ -199,7 +199,7 @@ for model_id, model in tqdm.tqdm(cached_models.items(), desc="Update models bulk
     "galleries": list(model["galleries"]),
     "channels": convert_dict_to_galleries("channel", model["channels"]),
     "tags": convert_dict_to_galleries("tag", model["tags"]),
-    "models": convert_dict_to_galleries("model", model["models"]),
+    "related_models": convert_dict_to_galleries("model", model["models"]),
   }})
   if res.matched_count != 1:
     print(res.raw_result)

@@ -15,7 +15,7 @@ import shutil
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(project_root)
 
-from core.face_processor import crop_image, silence_tensorflow,\
+from playground.face_processor import crop_image, silence_tensorflow,\
             init_model_face_db, check_similarity
 
 silence_tensorflow()

@@ -75,6 +75,7 @@ for gallery in tqdm.tqdm(galleries, desc="Scanning galleries"):
         galleries = [],
         channels = [],
         tags = [],
+        related_models = [],
       )
       new_model.save()
       existing_models.append(new_model)

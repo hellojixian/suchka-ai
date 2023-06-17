@@ -5,7 +5,7 @@ load_dotenv()
 # the fundamental gallery object
 class Image(Document):
   gid = StringField(required=True)
-  gallery = ReferenceField('Gallery')
+  gallery = LazyReferenceField('Gallery')
   filename = StringField()
   url = StringField()
   meta = {
