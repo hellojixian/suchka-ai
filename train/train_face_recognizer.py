@@ -21,17 +21,17 @@ from tqdm import tqdm
 device = torch.device("cuda:1")
 dataset = FaceDataset(device=device)
 
-train_size = int(0.9 * len(dataset))
-val_size = len(dataset) - train_size
-
-train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
+split_ratio = 0.95
 
 # Define the batch size for your DataLoader
 batch_size = 2048
-num_epochs = 300
+num_epochs = 500
 val_batch_size = 100
 
 # Create a DataLoader instance
+train_size = int(split_ratio * len(dataset))
+val_size = len(dataset) - train_size
+train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=val_batch_size)
 
@@ -78,6 +78,10 @@ with torch.enable_grad():
         loss_mean = torch.mean(torch.tensor(loss_list))
         t.set_description(f"Epoch [{epoch+1}/{num_epochs}], Loss: {loss_mean:.4f} LR: {scheduler.get_last_lr()[0]:.4f}")
 
+    scheduler.step()
+    # print current leanring rate
+    model.save_weights()
+
     with tqdm(val_loader, unit="batch") as x:
       accuracy_list = []
       for val_data in x:
@@ -91,6 +95,3 @@ with torch.enable_grad():
         accuracy_mean = torch.mean(torch.tensor(accuracy_list))
         x.set_description(f"Epoch [{epoch+1}/{num_epochs}], Accuracy: {accuracy_mean:.4f}")
 
-    scheduler.step()
-    # print current leanring rate
-    model.save_weights()
