@@ -26,7 +26,6 @@ class FaceDataset(Dataset):
     if device is not None:
       self.device = device
 
-
     model_dataset = dict()
     models = pydb.model.find({}, {'faces': 1, 'name': 1})
     model_count = pydb.model.count_documents({})
