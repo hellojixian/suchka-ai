@@ -13,3 +13,6 @@ def build_indexes():
   Channel.ensure_indexes()
   Image.ensure_indexes()
   return
+
+from core.database import Database
+db = Database()

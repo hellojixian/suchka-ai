@@ -105,7 +105,7 @@ def save_model_faces(model:Model, common_faces:list, pbar=None, pbar_prefix:str=
         name=model.name,
         filename=filename,
         source=face_data['image_path'].replace(storage_root, ''),
-        embedding_bin=np.array(face_data['embedding']).tobytes(),
+        embedding_bin=np.array(face_data['embedding']).astype(dtype=np.float32).tobytes(),
         gallery=face_data['gallery_id'],
         model=model.id,
       )
