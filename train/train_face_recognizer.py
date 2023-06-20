@@ -21,12 +21,12 @@ from tqdm import tqdm
 device = torch.device("cuda:1")
 dataset = FaceDataset(device=device)
 
-split_ratio = 0.95
+split_ratio = 0.99
 
 # Define the batch size for your DataLoader
 batch_size = 2048
 num_epochs = 500
-val_batch_size = 100
+val_batch_size = 2048
 
 # Create a DataLoader instance
 train_size = int(split_ratio * len(dataset))
@@ -41,21 +41,21 @@ val_loader = DataLoader(val_dataset, batch_size=val_batch_size)
 model = FaceRecognizer(device=device)
 
 total_params = sum(p.numel() for p in model.parameters())
-print(f'Total params: {total_params/1024/1024}')
+print(f'Total params: {total_params/1024/1024:.3f}M')
 
 # Define your loss function
 criterion = CrossEntropyLoss()
 
 # Define your optimizer
 # optimizer = torch.optim.AdamW(model.parameters(), lr=0.0005)
-optimizer = torch.optim.AdamW(model.parameters(), lr=0.05)
-scheduler = StepLR(optimizer, step_size=10, gamma=0.1)
+optimizer = torch.optim.AdamW(model.parameters(), lr=0.0005)
+scheduler = StepLR(optimizer, step_size=10, gamma=0.5)
 
-model.train()
 
 # Training loop
 with torch.enable_grad():
   for epoch in range(num_epochs):
+    model.train()
     with tqdm(train_loader, unit="batch") as t:
       loss_list = []
       for data in t:
@@ -74,12 +74,12 @@ with torch.enable_grad():
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        loss_list.append(loss.item())
+        loss_value = loss.item()
+        loss_list.append(loss_value)
         loss_mean = torch.mean(torch.tensor(loss_list))
-        t.set_description(f"Epoch [{epoch+1}/{num_epochs}], Loss: {loss_mean:.4f} LR: {scheduler.get_last_lr()[0]:.4f}")
+        t.set_description(f"Epoch [{epoch+1}/{num_epochs}], Loss: {loss_value:.4f} LR: {scheduler.get_last_lr()[0]:.6f}")
 
     scheduler.step()
-    # print current leanring rate
     model.save_weights()
 
     with tqdm(val_loader, unit="batch") as x:

@@ -33,8 +33,8 @@ class FaceDataset(Dataset):
       model = next(models)
       model_name = model['name']
       face_count = len(model['faces'])
-      # if face_count >= 300: model_dataset[model_name] = face_count
-      model_dataset[model_name] = face_count
+      if face_count >= 35: model_dataset[model_name] = face_count
+      # model_dataset[model_name] = face_count
 
     names = dict()
     for model_name, _ in tqdm(model_dataset.items(), desc="Loading dataset"):

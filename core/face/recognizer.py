@@ -7,6 +7,8 @@ weight_file = f'{os.path.dirname(project_root)}/pretrained/face_recognizer.pth'
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+
 from core.face.vectorizer import FaceVectorizer
 import numpy as np
 
@@ -16,15 +18,21 @@ class FaceRecognizer(nn.Module):
 
     self.vectorizer = FaceVectorizer()
     self.output_dim = self.vectorizer.features_count
-    self.hidden_dim = 10000
-    self.hidden_dim_2 = 5000
+    self.hidden_dim = 6000
 
     self.classifier = nn.Sequential(
       nn.Linear(2622, self.hidden_dim),
-      nn.ReLU(inplace=True),
-      nn.Linear(self.hidden_dim, self.hidden_dim_2),
-      nn.ReLU(inplace=True),
-      nn.Linear(self.hidden_dim_2, self.output_dim),
+      nn.GELU(),
+      nn.Linear(self.hidden_dim, self.hidden_dim),
+      nn.GELU(),
+      nn.Dropout(0.5),
+      nn.Linear(self.hidden_dim, self.hidden_dim),
+      nn.GELU(),
+      nn.Dropout(0.5),
+      nn.Linear(self.hidden_dim, self.hidden_dim),
+      nn.GELU(),
+      nn.Dropout(0.5),
+      nn.Linear(self.hidden_dim, self.output_dim),
     )
     self.softmax = nn.Softmax(dim=1)
     self.load_weights()
@@ -91,24 +99,21 @@ class FaceRecognizer(nn.Module):
     return
 
   def predict_batch(self, embeddings):
+    self.eval()
     with torch.no_grad():
       x = self.forward(embeddings)
       x = self.softmax(x)
-      for i in range(x.shape[0]):
-        pos = x[i].argmax().cpu().detach().numpy()
-        label = torch.Tensor(np.zeros(self.output_dim))
-        label[pos] = 1
-        x[i] = label
+      x = F.one_hot(x.argmax(dim=1), num_classes=self.output_dim)
       return x
 
   def predict(self, embedding):
+    self.eval()
     with torch.no_grad():
       x = self.forward(embedding)
       x = self.softmax(x)
       pos = x.argmax().cpu().detach().numpy()
       probs = x[0, pos]
-      label = np.zeros(self.output_dim)
-      label[pos] = 1
+      label = F.one_hot(x.argmax(dim=1), num_classes=self.output_dim).numpy()
       return [self.vectorizer.get_name_from_label(label), probs]
 
   def save_weights(self):
