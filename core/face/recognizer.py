@@ -18,10 +18,14 @@ class FaceRecognizer(nn.Module):
 
     self.vectorizer = FaceVectorizer()
     self.output_dim = self.vectorizer.features_count
-    self.hidden_dim = 6000
+    self.hidden_dim = 5000
 
     self.classifier = nn.Sequential(
       nn.Linear(2622, self.hidden_dim),
+      nn.GELU(),
+      nn.Linear(self.hidden_dim, self.hidden_dim),
+      nn.GELU(),
+      nn.Linear(self.hidden_dim, self.hidden_dim),
       nn.GELU(),
       nn.Linear(self.hidden_dim, self.hidden_dim),
       nn.GELU(),
@@ -35,6 +39,9 @@ class FaceRecognizer(nn.Module):
       nn.Linear(self.hidden_dim, self.output_dim),
     )
     self.softmax = nn.Softmax(dim=1)
+    # for key in self.state_dict():
+    #   print(key)
+    #   print(self.state_dict()[key].shape)
     self.load_weights()
     self.device = torch.device('cpu')
     if device is not None:
